@@ -200,10 +200,7 @@ product-advisor/
 * **Evaluation-first:** Retrieval, fake detection, vision, guardrails, and end-to-end behavior are continuously evaluated against reproducible datasets.
 * **Observable:** Caching, tracing, manifests, and evaluation reports make system behavior inspectable and reproducible.
 
-```
 
-This version keeps the **actual architecture intact** but makes the README tree something a recruiter/developer can understand in ~30 seconds.
-```
 
 ---
 
