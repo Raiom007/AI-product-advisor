@@ -66,46 +66,144 @@ The system follows an offline + online architecture:
 
 ## Project Structure
 
-product-advisor/
-├─ AGENTS.md                     # rules for Antigravity agents (see model guide appendix)
-├─ README.md  Makefile  requirements.txt  .env.example  .gitignore
-├─ configs/
-│  ├─ models.yaml                # role → ORDERED candidate list [{provider, model, needs:[vision,json_schema]}]
-│  ├─ limits.yaml                # RPM/RPD/TPM per model (filled from probe), request budget
-│  ├─ ranking.yaml               # enabled signals + weights + thresholds + unverifiable_policy
-│  ├─ fakes.yaml                 # detector signals + weights + thresholds
-│  ├─ data.yaml                  # CSV column mapping, cleaning switches
-│  ├─ features.yaml              # which plug-ins are enabled (tools, guardrails, retrievers, signals), feature flags, active domain pack
-│  └─ profiles/  dev.yaml eval.yaml demo.yaml   # ADVISOR_PROFILE: dev = cache-first + fake LLM · eval = replay · demo = live
-├─ prompts/                      # versioned prompt templates (parser, summarizer, vision, composer, planner); content hash goes in cache key + trace
-├─ domain/electronics/           # domain pack: taxonomy seed, spec vocabulary + units, use-case lexicon, visual-claim templates, injection patterns
-├─ data/  (gitignored)           # raw/  processed/  cache/  index/  traces/
-├─ src/advisor/
-│  ├─ core/        schemas.py  registry.py  events.py  config.py  prompts.py  errors.py  budget.py  tracing.py  cache.py  manifest.py
-│  ├─ plugins/     __init__.py   # explicit import list = the plug-in manifest (no magic auto-discovery)
-│  ├─ llm/         base.py  capabilities.py  gemini.py  groq.py  fake.py(test double)  gateway.py  ratelimit.py
-│  ├─ ingest/      profile.py  clean_products.py  clean_reviews.py  specs_parser.py  build_index.py
-│  ├─ store/       interfaces.py  sqlite_store.py  vector_store.py  session_store.py
-│  ├─ guardrails/  pii.py  injection.py  untrusted.py  abstain.py         # each registered with @guardrail(stage=...)
-│  ├─ understanding/  parser.py  clarify.py
-│  ├─ retrieval/   filters.py  keyword.py  semantic.py  hybrid.py  (RRF fusion over enabled retrievers)
-│  ├─ reviews/     fake_detector.py  features.py(fake signals)  summarizer.py  sentiment.py
-│  ├─ vision/      fetch.py  claims.py  verifier.py
-│  ├─ ranking/     scorer.py(generic sum over registered signals)  signals.py(built-in signals)  explain_rank.py
-│  ├─ explain/     composer.py  grounding_validator.py  render.py
-│  ├─ agent/       state.py  tools.py(built-in tool wrappers)  planner.py  verifiers.py  loop.py(plan executor)
-│  ├─ service.py   # facade: advise(query, session_id) -> AdvisorResponse
-│  ├─ api.py       # thin FastAPI wrapper (optional, ~40 lines)
-│  └─ ui/          app.py  pages/  (Streamlit)
-├─ eval/
-│  ├─ data/  queries.jsonl  gold.jsonl  seeded_fakes.jsonl  image_claims.jsonl  adversarial.jsonl
-│  ├─ baseline.py  metrics.py  run_eval.py  report.py
-│  ├─ suites/    # one file per registered eval suite (retrieval, fakes, vision, guardrails, e2e)
-│  └─ reports/   (generated: eval_report.md, metrics.json, per-query CSV) + baseline_metrics.json (committed at the final version)
-├─ scripts/  probe_models.py  make_seeded_fakes.py  label_pool.py
-├─ tests/        unit tests per module + golden tests for guardrails + contract tests per port + test_extension_points.py
-└─ docs/  ARCHITECTURE.md  data_cleaning.md  timeline.md  user_guide.md  eval_report.md  adr/
+## Project Structure
 
+```text
+product-advisor/
+├── AGENTS.md
+├── README.md
+├── requirements.txt
+├── Makefile
+├── .env.example
+│
+├── configs/                     # Configuration and feature flags
+│   ├── models.yaml              # Model candidates & capabilities
+│   ├── limits.yaml              # Rate/token/request limits
+│   ├── ranking.yaml             # Ranking signals & weights
+│   ├── fakes.yaml               # Fake-review detection
+│   ├── data.yaml                # Data ingestion configuration
+│   ├── features.yaml            # Enabled plugins & features
+│   └── profiles/                # dev / eval / demo profiles
+│
+├── prompts/                     # Versioned prompt templates
+│
+├── domain/
+│   └── electronics/             # Electronics domain knowledge pack
+│
+├── data/                        # Runtime data (gitignored)
+│   ├── raw/
+│   ├── processed/
+│   ├── cache/
+│   ├── index/
+│   └── traces/
+│
+├── src/advisor/
+│   ├── core/                    # Schemas, config, events, cache, tracing
+│   ├── plugins/                 # Explicit plugin registry
+│   │
+│   ├── llm/                     # Multi-provider LLM gateway
+│   ├── ingest/                  # Product/review ingestion & indexing
+│   ├── store/                   # SQLite, vector & session stores
+│   │
+│   ├── guardrails/              # PII, injection, trust & abstention
+│   ├── understanding/           # Query parsing & clarification
+│   ├── retrieval/               # Keyword, semantic & hybrid retrieval
+│   ├── reviews/                 # Fake detection, sentiment & summarization
+│   ├── vision/                  # Image fetching & claim verification
+│   ├── ranking/                 # Product scoring & ranking signals
+│   ├── explain/                 # Grounded explanations & rendering
+│   │
+│   ├── agent/                   # Agent state, planning, tools & execution
+│   │
+│   ├── service.py               # Main application facade
+│   ├── api.py                   # FastAPI API layer
+│   └── ui/                      # Streamlit interface
+│
+├── eval/
+│   ├── data/                    # Evaluation & adversarial datasets
+│   ├── suites/                  # Retrieval, fake, vision, guardrail & E2E tests
+│   ├── run_eval.py              # Evaluation runner
+│   ├── metrics.py               # Evaluation metrics
+│   └── reports/                 # Generated evaluation reports
+│
+├── scripts/                     # Model probing & dataset utilities
+├── tests/                       # Unit, contract & golden tests
+│
+└── docs/
+    ├── ARCHITECTURE.md
+    ├── data_cleaning.md
+    ├── timeline.md
+    ├── user_guide.md
+    ├── eval_report.md
+    └── adr/                     # Architecture Decision Records
+```
+
+### Architecture at a Glance
+
+```text
+                         ┌───────────────┐
+                         │     User      │
+                         └───────┬───────┘
+                                 │
+                                 ▼
+                       ┌───────────────────┐
+                       │ Query Understanding│
+                       └─────────┬─────────┘
+                                 │
+                    ┌────────────┼────────────┐
+                    ▼            ▼            ▼
+               Retrieval      Reviews       Vision
+                    │            │            │
+                    └────────────┼────────────┘
+                                 ▼
+                         ┌──────────────┐
+                         │   Ranking    │
+                         └──────┬───────┘
+                                │
+                         ┌──────▼───────┐
+                         │ Agent / Plan │
+                         │   Executor   │
+                         └──────┬───────┘
+                                │
+                    ┌───────────▼───────────┐
+                    │ Context + Guardrails  │
+                    │ + Tools + Memory       │
+                    └───────────┬───────────┘
+                                │
+                                ▼
+                         ┌──────────────┐
+                         │ Multi-LLM    │
+                         │ Gateway      │
+                         └──────┬───────┘
+                                │
+                                ▼
+                         ┌──────────────┐
+                         │ Grounded     │
+                         │ Explanation  │
+                         └──────┬───────┘
+                                │
+                                ▼
+                         ┌──────────────┐
+                         │ Advisor      │
+                         │ Response     │
+                         └──────────────┘
+```
+
+### Design Principles
+
+* **Modular:** Retrieval, ranking, guardrails, LLMs, and other capabilities are independently replaceable.
+* **Plugin-based:** Extensions are explicitly registered rather than discovered through implicit magic.
+* **Multi-model:** The LLM gateway supports ordered model fallbacks based on capabilities, limits, and configuration.
+* **Context-aware:** Relevant memory, retrieved evidence, tool outputs, and application state are assembled before generation.
+* **Grounded:** Recommendations and explanations are validated against retrieved product evidence.
+* **Config-driven:** Models, ranking signals, feature flags, limits, prompts, and domain behavior are configurable without changing core logic.
+* **Evaluation-first:** Retrieval, fake detection, vision, guardrails, and end-to-end behavior are continuously evaluated against reproducible datasets.
+* **Observable:** Caching, tracing, manifests, and evaluation reports make system behavior inspectable and reproducible.
+
+```
+
+This version keeps the **actual architecture intact** but makes the README tree something a recruiter/developer can understand in ~30 seconds.
+```
 
 ---
 
