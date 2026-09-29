@@ -116,6 +116,44 @@ CREATE TABLE IF NOT EXISTS image_check_cache (
 );
 """
 
+def build_fts_indexes(conn: sqlite3.Connection) -> None:
+    """Create and populate FTS5 virtual tables.
+    
+    WHY: Doing this as a batch insert is much faster than triggers during ingest.
+    """
+    # Products FTS
+    conn.execute("DROP TABLE IF EXISTS products_fts")
+    conn.execute("""
+        CREATE VIRTUAL TABLE products_fts USING fts5(
+            product_id UNINDEXED,
+            name, brand, description, cat_l1, cat_l2, cat_l3,
+            content=products, content_rowid=rowid
+        )
+    """)
+    conn.execute("""
+        INSERT INTO products_fts(rowid, product_id, name, brand, description, cat_l1, cat_l2, cat_l3)
+        SELECT rowid, product_id, name, brand, description, cat_l1, cat_l2, cat_l3 FROM products
+    """)
+
+    # Reviews FTS
+    conn.execute("DROP TABLE IF EXISTS reviews_fts")
+    conn.execute("""
+        CREATE VIRTUAL TABLE reviews_fts USING fts5(
+            review_id UNINDEXED,
+            product_id UNINDEXED,
+            title, text,
+            content=reviews, content_rowid=rowid
+        )
+    """)
+    conn.execute("""
+        INSERT INTO reviews_fts(rowid, review_id, product_id, title, text)
+        SELECT rowid, review_id, product_id, title, text FROM reviews
+    """)
+
+    conn.commit()
+
+
+
 # ---------------------------------------------------------------------------
 # Connection helper
 # ---------------------------------------------------------------------------

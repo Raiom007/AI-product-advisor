@@ -42,6 +42,9 @@ ingest:
 	    --db data/advisor.db \
 	    --log data/processed/cleaning_log.jsonl \
 	    --docs docs/data_cleaning.md
+	$(VENV_PYTHON) -m advisor.ingest.build_index \
+	    --db data/advisor.db \
+	    --chroma data/chroma
 
 
 run:
