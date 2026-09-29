@@ -78,7 +78,38 @@ def config_hash(config: dict[str, Any]) -> str:
 
     WHY: Sort keys so Python dict insertion order doesn't affect the hash.
          Used by RunManifest and eval replay to verify identical settings.
+
+    Machine-independence guarantee: ADVISOR_RAW_DIR and API keys are NOT
+    merged into the config dict (load_config() reads them from os.environ
+    at the point of use). If a future YAML ever expands an env var into an
+    absolute path, that path would make this hash machine-specific and break
+    P20 eval replay. The _ABSOLUTE_PATH_KEYS set below is the guard; extend
+    it if new path-valued keys are added to any configs/*.yaml.
     """
+    # WHY: known path keys whose values are machine-specific and must not
+    # affect the hash. Currently none of the configs/*.yaml files contain
+    # these, but the guard is cheap and documents the invariant for P20.
+    _ABSOLUTE_PATH_KEYS = {"raw_dir", "data_dir", "cache_dir", "index_dir"}
+
+    def _scrub(obj: Any) -> Any:
+        """Replace absolute-path strings under known keys with a sentinel."""
+        if isinstance(obj, dict):
+            scrubbed = {}
+            for k, v in obj.items():
+                if (
+                    k in _ABSOLUTE_PATH_KEYS
+                    and isinstance(v, str)
+                    and (v.startswith("/") or (len(v) > 1 and v[1] == ":"))
+                ):
+                    scrubbed[k] = "<abs-path-excluded>"
+                else:
+                    scrubbed[k] = _scrub(v)
+            return scrubbed
+        if isinstance(obj, list):
+            return [_scrub(i) for i in obj]
+        return obj
+
     payload = {k: v for k, v in config.items() if k != "_hash"}
+    payload = _scrub(payload)
     serialised = json.dumps(payload, sort_keys=True, default=str)
     return hashlib.sha256(serialised.encode()).hexdigest()
