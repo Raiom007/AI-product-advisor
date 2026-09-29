@@ -1,0 +1,75 @@
+# configs/models.yaml — role → ordered candidate list
+# WHY: Code asks for a role ("parser", "summarizer", etc.); the gateway
+# resolves it to a model. Swapping a model = one line here, zero Python
+# changes. (ARCHITECTURE.md §5.9, ADR 0005, AGENTS.md rule 4)
+#
+# ⚠ PLACEHOLDER — run `make probe` (Day 4) to fill real model IDs.
+# §0 A3: gemini-2.0-flash and text-embedding-004 may be shut down.
+
+roles:
+  parser:
+    # WHY: Needs structured JSON output + Hinglish understanding
+    candidates:
+      - provider: gemini
+        model: "PLACEHOLDER_verify_day4"   # e.g. gemini-1.5-flash or gemini-2.5-flash
+        params: {temperature: 0, max_output_tokens: 512}
+      - provider: groq
+        model: "PLACEHOLDER_verify_day4"   # e.g. llama-3.3-70b-versatile
+        params: {temperature: 0, max_tokens: 512}
+      - provider: fake
+        model: "fake-parser"
+        params: {}
+
+  summarizer:
+    # WHY: Batch 2-3 products per call; quarantined (sees only review text in delimiters)
+    candidates:
+      - provider: gemini
+        model: "PLACEHOLDER_verify_day4"
+        params: {temperature: 0, max_output_tokens: 1024}
+      - provider: groq
+        model: "PLACEHOLDER_verify_day4"
+        params: {temperature: 0, max_tokens: 1024}
+      - provider: fake
+        model: "fake-summarizer"
+        params: {}
+
+  vision:
+    # WHY: Requires multimodal (image + text); only Gemini Flash supports this free
+    candidates:
+      - provider: gemini
+        model: "PLACEHOLDER_verify_day4"
+        params: {temperature: 0, max_output_tokens: 512}
+      - provider: fake
+        model: "fake-vision"
+        params: {}
+
+  composer:
+    # WHY: Final answer generation; one call, all products; evidence-pool as data
+    candidates:
+      - provider: gemini
+        model: "PLACEHOLDER_verify_day4"
+        params: {temperature: 0, max_output_tokens: 2048}
+      - provider: groq
+        model: "PLACEHOLDER_verify_day4"
+        params: {temperature: 0, max_tokens: 2048}
+      - provider: fake
+        model: "fake-composer"
+        params: {}
+
+  planner:
+    # WHY: Plans tool sequence from ParsedQuery; never sees raw product/review text
+    candidates:
+      - provider: gemini
+        model: "PLACEHOLDER_verify_day4"
+        params: {temperature: 0, max_output_tokens: 256}
+      - provider: groq
+        model: "PLACEHOLDER_verify_day4"
+        params: {temperature: 0, max_tokens: 256}
+      - provider: fake
+        model: "fake-planner"
+        params: {}
+
+embedder:
+  # WHY: Local CPU model → zero quota, deterministic, reproducible (ADR 0003)
+  provider: local
+  model: "BAAI/bge-small-en-v1.5"

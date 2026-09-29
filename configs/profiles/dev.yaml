@@ -1,0 +1,14 @@
+# configs/profiles/dev.yaml — development profile
+# WHY: dev profile uses the fake LLM provider so no live API calls are made
+# during development or unit tests. ADVISOR_PROFILE=dev is set automatically
+# by pyproject.toml [tool.pytest.ini_options] env.
+
+llm:
+  provider_override: fake   # WHY: overrides all roles to use fake.py (P9)
+
+features:
+  tools:
+    verify_images: false    # WHY: vision adds latency; skip in dev inner loop
+
+logging:
+  level: DEBUG

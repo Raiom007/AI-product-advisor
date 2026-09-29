@@ -1,0 +1,15 @@
+# Every text file stored as LF in git, checked out as LF everywhere.
+# WHY: prevents Windows from converting LF→CRLF, which would change file
+# hashes and break the config hash stability used by eval replay (§5.9).
+* text=auto eol=lf
+
+# Binary files — no conversion.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.pdf binary
+*.zip binary
+*.db binary
+*.sqlite binary

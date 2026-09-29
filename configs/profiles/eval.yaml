@@ -1,0 +1,10 @@
+# configs/profiles/eval.yaml — evaluation harness profile
+# WHY: eval profile replays cached LLM responses (cache_mode: replay) so
+# `make eval` produces bit-identical numbers without consuming quota.
+# Live mode activated only via `make eval --mode live` (P20).
+
+llm:
+  cache_mode: replay   # WHY: §5.9 — cache key = hash(model+role+prompt+schema+params)
+
+logging:
+  level: INFO

@@ -1,0 +1,59 @@
+# AI Product Advisor — pinned dependencies
+# WHY for each library is drawn from ARCHITECTURE.md §9.
+# Run `make setup` to install into .venv.
+# Run `make probe` (Day 4) to confirm free-tier model IDs after install.
+
+# ---------------------------------------------------------------------------
+# Core runtime
+# ---------------------------------------------------------------------------
+
+# Contracts, structured LLM output, config validation (§9: Pydantic v2)
+pydantic>=2.7,<3
+pydantic-settings>=2.3,<3
+
+# YAML config loading (§9: "Config" row)
+pyyaml>=6.0,<7
+
+# ---------------------------------------------------------------------------
+# LLM providers (§9: LLM primary/fallback rows)
+# WARNING: verify current free-tier model IDs on Day 4 via `make probe`.
+# ARCHITECTURE.md §0 A3 notes gemini-2.0-flash and text-embedding-004
+# may be shut down; do not hard-code model IDs.
+# ---------------------------------------------------------------------------
+google-genai>=1.5,<2        # Gemini Flash-class (primary); sdk renamed from google-generativeai
+groq>=0.9,<1                # Groq Llama 3.3 70B (fallback, independent quota pool)
+
+# ---------------------------------------------------------------------------
+# Storage (§9: Vector store, Keyword, Relational rows)
+# ---------------------------------------------------------------------------
+chromadb>=0.5,<1            # vector store, two collections: products + reviews
+# SQLite FTS5 is built into Python 3.11 — no extra package needed
+
+# ---------------------------------------------------------------------------
+# Embeddings (§9: Embeddings row — local, CPU, zero quota, reproducible)
+# NOTE: first `make setup` downloads ~130 MB of model weights (one-time).
+# ---------------------------------------------------------------------------
+sentence-transformers>=3.0,<4   # wraps bge-small-en-v1.5
+
+# ---------------------------------------------------------------------------
+# Image fetching for vision verifier (§5.5)
+# ---------------------------------------------------------------------------
+httpx>=0.27,<1              # async-capable HTTP client with timeout + size cap
+
+# ---------------------------------------------------------------------------
+# UI (§9: UI row)
+# ---------------------------------------------------------------------------
+streamlit>=1.35,<2
+
+# ---------------------------------------------------------------------------
+# Optional API layer (§9: Backend surface row — ~40-line wrapper)
+# ---------------------------------------------------------------------------
+fastapi>=0.111,<1
+uvicorn>=0.30,<1
+
+# ---------------------------------------------------------------------------
+# Dev / test / lint
+# ---------------------------------------------------------------------------
+pytest>=8.0,<9
+pytest-env>=1.1,<2          # sets ADVISOR_PROFILE=dev via pyproject.toml
+ruff>=0.4,<1

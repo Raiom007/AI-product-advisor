@@ -1,0 +1,12 @@
+# configs/profiles/demo.yaml — live demo profile
+# WHY: demo uses live LLM calls with a conservative budget to avoid
+# hitting quota during the Day 10 live defense presentation.
+
+llm:
+  cache_mode: live
+
+request_budget:
+  max_model_calls: 8   # WHY: conservative cap for demo; keeps cost predictable
+
+logging:
+  level: WARNING

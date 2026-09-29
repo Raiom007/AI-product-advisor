@@ -1,0 +1,33 @@
+# configs/fakes.yaml — fake-review detector signal weights and thresholds
+# WHY: Detector is deterministic Python (§5.4, ADR 0006).
+# Weights tuned on dev-50 seeded fakes ONLY; reported on test-50.
+# ⚠ LEAKAGE WARNING: never tune on test-50 (§5.4 leakage note).
+
+weights:
+  # WHY: four signals from §5.4; must sum to 1.0
+  near_dup: 0.40           # MinHash cosine > tau within/across products
+  burst: 0.20              # review burst in 48h window vs baseline
+  extreme_no_detail: 0.25  # rating ∈ {1,5} AND short AND low specificity
+  reviewer_pattern: 0.15   # same reviewer, ≥k products, same day
+
+thresholds:
+  # WHY: action = exclude above tau_high, downweight between tau_low..tau_high
+  tau_high: 0.70
+  tau_low: 0.40
+  downweight_factor: 0.30  # weight applied to downweighted reviews
+
+  # Near-duplicate parameters
+  near_dup_shingle_size: 5        # word n-gram size for MinHash
+  near_dup_cosine_threshold: 0.85
+
+  # Burst parameters
+  burst_window_hours: 48
+  burst_z_score_threshold: 2.0
+  burst_ratio_threshold: 5.0
+
+  # Extreme-no-detail parameters
+  short_review_max_words: 15
+  specificity_min_numbers: 1      # ≥1 number → not "no detail"
+
+  # Reviewer pattern parameters
+  reviewer_min_products: 3        # flagged if same reviewer, same day, ≥k products

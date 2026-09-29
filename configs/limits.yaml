@@ -1,0 +1,36 @@
+# configs/limits.yaml — rate limits and request budget
+# WHY: Free-tier limits are unpublished and shifting (§0 A2).
+# ⚠ PLACEHOLDER — run `make probe` (Day 4, scripts/probe_models.py) to
+# fill real RPM/RPD/TPM values. Do not trust the nulls below.
+
+request_budget:
+  # WHY: §5.9 specifies max_model_calls=12, max_wall_s=18, per-role caps.
+  # Expected typical call count ≈ 8 (§6); cap 12.
+  max_model_calls: 12
+  max_wall_s: 18.0
+  per_role_caps:
+    parser: 1
+    summarizer: 3
+    vision: 3
+    composer: 1
+    planner: 2
+
+providers:
+  gemini:
+    rpm: null    # requests per minute — filled by make probe
+    rpd: null    # requests per day
+    tpm: null    # tokens per minute
+    model_id: "PLACEHOLDER_verify_day4"
+
+  groq:
+    rpm: null
+    rpd: null
+    tpm: null
+    model_id: "PLACEHOLDER_verify_day4"
+
+gateway:
+  # WHY: exponential backoff + jitter on 429/5xx only (§5.9)
+  retry_max: 3
+  retry_base_delay_s: 1.0
+  retry_max_delay_s: 30.0
+  request_timeout_s: 15.0

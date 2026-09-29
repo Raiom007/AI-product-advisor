@@ -1,5 +1,5 @@
 .env
-data/
+/data/
 *.sqlite
 *.db
 .venv/

@@ -1,0 +1,28 @@
+# configs/ranking.yaml — scoring weights and thresholds
+# WHY: Weights live here so they can be tuned on the dev gold set (Day 5)
+# without touching Python. (§5.6, AGENTS.md rule 4)
+# Tune on dev-25 queries ONLY; report on test-25 + all.
+
+weights:
+  # WHY: Default weights from §5.6. Sum must equal 1.0 when vision is active.
+  # When vision is skipped, w_vis is dropped and the rest are renormalised.
+  relevance: 0.30          # R: RRF score, min-max normalised
+  soft_fit: 0.15           # F: fraction of soft preferences satisfied
+  use_case_sentiment: 0.30 # U: trust-weighted use-case sentiment
+  review_trust: 0.15       # T: 1 − flagged_mass/total_mass
+  visual: 0.10             # V: absent if vision skipped → renormalise
+
+thresholds:
+  shortlist_size: 8        # default candidates after retrieval
+  shortlist_min: 5
+  shortlist_max: 10
+  vision_top_n: 3          # run vision only on top-N after pre-rank
+  images_per_product: 3    # max images per vision call
+
+  # Confidence thresholds (§5.6)
+  # WHY: margin between top-1 and top-2 score determines high/low confidence
+  confidence_high_margin: 0.15
+  evidence_sufficient_min_reviews: 3   # below this → lower confidence
+
+  # Tie-break: prefer higher T (review trust), then lower price
+  tiebreak: ["review_trust_desc", "price_asc"]

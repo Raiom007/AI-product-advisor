@@ -1,0 +1,44 @@
+# configs/features.yaml — feature flags controlling which registered plug-ins are active
+# WHY: enables/disables extensions without code changes (ADR 0004, Registry.enabled()).
+# Profile overlays (configs/profiles/*.yaml) selectively override these.
+# All flags default to true; set false to disable without deleting the plug-in.
+
+tools:
+  parse_query: true
+  retrieve: true
+  analyse_reviews: true
+  verify_images: true
+  rank: true
+  compose_answer: true
+  ask_user: true
+
+ranking_signals:
+  relevance: true
+  soft_fit: true
+  use_case_sentiment: true
+  review_trust: true
+  visual: true
+
+fake_signals:
+  near_dup: true
+  burst: true
+  extreme_no_detail: true
+  reviewer_pattern: true
+
+guardrails:
+  pii_pre: true           # PII scan before any LLM call
+  injection_pre: true     # injection heuristic on user query
+  grounding_post: true    # grounding validator on composer output
+  abstention_post: true   # post-condition: re-check no constraint violations
+
+retrievers:
+  keyword: true
+  semantic: true
+
+eval_suites:
+  retrieval: true
+  detector: true
+  parser: true
+  vision: true
+  guardrail: true
+  e2e: true
