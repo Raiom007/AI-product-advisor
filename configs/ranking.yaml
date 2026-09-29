@@ -26,3 +26,9 @@ thresholds:
 
   # Tie-break: prefer higher T (review trust), then lower price
   tiebreak: ["review_trust_desc", "price_asc"]
+
+constraints:
+  # WHY: §5.6 "gates, not scores". When a spec is absent the default policy
+  # excludes the product (conservative; prevents false-positive recommendations).
+  # Set to "include" only for soft constraints in the soft-fit pass.
+  unverifiable_policy: exclude    # "exclude" | "include"

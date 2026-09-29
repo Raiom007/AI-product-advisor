@@ -10,7 +10,7 @@ Additional types added for §4.1 needs:
 """
 from __future__ import annotations
 
-from typing import Any, Generic, Literal, Optional, TypeVar
+from typing import Any, Generic, Literal, TypeVar
 
 from pydantic import BaseModel, Field
 
@@ -19,8 +19,8 @@ from pydantic import BaseModel, Field
 # ---------------------------------------------------------------------------
 
 class Budget(BaseModel):
-    min_inr: Optional[float] = None
-    max_inr: Optional[float] = None
+    min_inr: float | None = None
+    max_inr: float | None = None
 
 
 class Constraint(BaseModel):
@@ -29,8 +29,11 @@ class Constraint(BaseModel):
         "size_limit", "weight_limit", "budget",
     ]
     key: str                    # e.g. "ports.hdmi", "weight_kg", "brand"
-    op: Literal["eq", "gte", "lte", "in", "not_in", "contains"]
-    value: str | float | list[str]
+    # WHY: "between" added (P6) for budget ranges {min_inr, max_inr} — backwards-compatible
+    # (new Literal; old callers only use the previous 6). ADR-0007 if this breaks a test.
+    op: Literal["eq", "gte", "lte", "in", "not_in", "contains", "between"]
+    # WHY: dict added for budget-range value {"min_inr": x, "max_inr": y} — additive only
+    value: str | float | list[str] | dict[str, Any]
     raw_text: str               # the user's words, for the trace/UI
 
     # WHY: ext allows future plug-in constraint kinds to carry extra metadata
@@ -42,14 +45,14 @@ class Constraint(BaseModel):
 class ParsedQuery(BaseModel):
     language: Literal["en", "hinglish"]
     query_en: str                        # normalised English rewrite (Hinglish → English)
-    category: Optional[str] = None       # resolved against real taxonomy
-    subcategory: Optional[str] = None
+    category: str | None = None       # resolved against real taxonomy
+    subcategory: str | None = None
     budget: Budget = Field(default_factory=Budget)
-    use_case: Optional[str] = None
+    use_case: str | None = None
     hard: list[Constraint] = Field(default_factory=list)
     soft: list[str] = Field(default_factory=list)
     needs_clarification: bool = False
-    clarifying_question: Optional[str] = None    # exactly one question
+    clarifying_question: str | None = None    # exactly one question
 
 
 # ---------------------------------------------------------------------------
@@ -106,7 +109,7 @@ class ScoreBreakdown(BaseModel):
     soft_fit: float
     use_case_sentiment: float
     review_trust: float
-    visual: Optional[float] = None     # None when vision skipped
+    visual: float | None = None     # None when vision skipped
     total: float
     weights_used: dict[str, float]     # after renormalisation
 
@@ -129,12 +132,12 @@ class Recommendation(BaseModel):
 
 class AdvisorResponse(BaseModel):
     status: Literal["ok", "needs_clarification", "abstained", "degraded_ok"]
-    message: Optional[str] = None               # clarifying question / abstention reason
+    message: str | None = None               # clarifying question / abstention reason
     recommendations: list[Recommendation] = Field(default_factory=list)
     degraded: list[str] = Field(default_factory=list)   # ["vision_skipped:rate_limit"]
     trace_id: str
     budget_report: dict                         # calls used/limit, wall-clock
-    manifest: Optional[dict] = None            # RunManifest.to_dict() stamped by service.py
+    manifest: dict | None = None            # RunManifest.to_dict() stamped by service.py
 
 
 # ---------------------------------------------------------------------------
@@ -156,8 +159,8 @@ class ToolResult(BaseModel, Generic[T]):
     without knowing what T is (§4, §5.10).
     """
     ok: bool
-    data: Optional[T] = None
-    error: Optional[str] = None
+    data: T | None = None
+    error: str | None = None
     degraded: bool = False
     cost: ToolCost = Field(default_factory=ToolCost)
 
@@ -171,7 +174,7 @@ class Verdict(BaseModel):
     verifier: str                                           # name registered in verifiers registry
     passed: bool
     action: Literal["continue", "replan", "ask_user", "abstain", "degrade", "lower_confidence"]
-    reason: Optional[str] = None
+    reason: str | None = None
     ext: dict[str, Any] = Field(default_factory=dict)
 
 
@@ -184,6 +187,6 @@ class GuardResult(BaseModel):
     guardrail: str                           # name registered in guardrails registry
     stage: Literal["pre", "post"]
     passed: bool
-    threat: Optional[str] = None             # "pii" | "injection" | "grounding" | "constraint_violation"
-    detail: Optional[str] = None
+    threat: str | None = None             # "pii" | "injection" | "grounding" | "constraint_violation"
+    detail: str | None = None
     ext: dict[str, Any] = Field(default_factory=dict)

@@ -1,0 +1,137 @@
+# domain/electronics/unit_norms.yaml
+# Unit normalisation table.
+#
+# WHY: Raw spec text has wildly inconsistent units ("16 GB", "16gb", "16 gigabytes",
+# "16384 MB"). This table converts everything to the canonical unit for each
+# quantity so constraint checks use a single consistent number.
+#
+# Format per entry:
+#   raw_unit:    the string as it appears in spec text (lower-cased for matching)
+#   canonical:   the canonical unit (must match unit_target in spec_keys.yaml)
+#   multiplier:  value_in_canonical = raw_value * multiplier
+#
+# Parser applies: canonical_value = raw_numeric * multiplier
+
+unit_norms:
+
+  # Memory / Storage
+  - raw_unit: mb
+    canonical: GB
+    multiplier: 0.0009765625   # 1/1024
+
+  - raw_unit: megabyte
+    canonical: GB
+    multiplier: 0.0009765625
+
+  - raw_unit: gb
+    canonical: GB
+    multiplier: 1.0
+
+  - raw_unit: gigabyte
+    canonical: GB
+    multiplier: 1.0
+
+  - raw_unit: tb
+    canonical: GB
+    multiplier: 1024.0
+
+  - raw_unit: terabyte
+    canonical: GB
+    multiplier: 1024.0
+
+  # Weight
+  - raw_unit: g
+    canonical: kg
+    multiplier: 0.001
+
+  - raw_unit: gram
+    canonical: kg
+    multiplier: 0.001
+
+  - raw_unit: grams
+    canonical: kg
+    multiplier: 0.001
+
+  - raw_unit: kg
+    canonical: kg
+    multiplier: 1.0
+
+  - raw_unit: kilogram
+    canonical: kg
+    multiplier: 1.0
+
+  - raw_unit: kilograms
+    canonical: kg
+    multiplier: 1.0
+
+  # Screen size
+  - raw_unit: inch
+    canonical: inch
+    multiplier: 1.0
+
+  - raw_unit: inches
+    canonical: inch
+    multiplier: 1.0
+
+  - raw_unit: '"'
+    canonical: inch
+    multiplier: 1.0
+
+  - raw_unit: "''"
+    canonical: inch
+    multiplier: 1.0
+
+  - raw_unit: in
+    canonical: inch
+    multiplier: 1.0
+
+  - raw_unit: cm
+    canonical: inch
+    multiplier: 0.393701
+
+  - raw_unit: cms
+    canonical: inch
+    multiplier: 0.393701
+
+  # Battery
+  - raw_unit: mah
+    canonical: mAh
+    multiplier: 1.0
+
+  - raw_unit: milliamp
+    canonical: mAh
+    multiplier: 1.0
+
+  - raw_unit: milliampere
+    canonical: mAh
+    multiplier: 1.0
+
+  - raw_unit: wh
+    canonical: Wh
+    multiplier: 1.0
+
+  - raw_unit: watt-hour
+    canonical: Wh
+    multiplier: 1.0
+
+  # Frequency
+  - raw_unit: hz
+    canonical: Hz
+    multiplier: 1.0
+
+  - raw_unit: hertz
+    canonical: Hz
+    multiplier: 1.0
+
+  # Camera
+  - raw_unit: mp
+    canonical: MP
+    multiplier: 1.0
+
+  - raw_unit: megapixel
+    canonical: MP
+    multiplier: 1.0
+
+  - raw_unit: megapixels
+    canonical: MP
+    multiplier: 1.0

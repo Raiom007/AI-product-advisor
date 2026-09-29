@@ -81,9 +81,15 @@ eval_suites: Registry = Registry("eval_suites")
 # no plug-in has been loaded yet.
 # ---------------------------------------------------------------------------
 
-for _kind in ("category", "brand_exclude", "must_have", "size_limit", "weight_limit", "budget"):
-    @constraint_kinds.register(_kind)
-    def _constraint_kind_placeholder(**_): ...  # noqa: E306 — loop body
+# WHY: Built-in kind names are enumerated here so validate_*_kind() works
+# even before constraint_checks.py / evidence resolvers are imported.
+# The real callable implementations are registered by retrieval/constraint_checks.py
+# using @constraint_kinds.register(). Pre-registering placeholders here caused
+# duplicate-name errors when that module was imported (P6 fix).
+_BUILTIN_CONSTRAINT_KINDS: frozenset[str] = frozenset(
+    ("category", "brand_exclude", "must_have", "size_limit", "weight_limit", "budget")
+)
+_BUILTIN_EVIDENCE_KINDS: frozenset[str] = frozenset(("spec_line", "review", "image_obs"))
 
 for _kind in ("spec_line", "review", "image_obs"):
     @evidence_kinds.register(_kind)
@@ -168,21 +174,23 @@ def validate_constraint_kind(kind: str) -> None:
     plug-in kinds that extend the set at runtime without schema changes.
     Called by the parser/gateway, not by Pydantic validators.
     """
-    if kind not in constraint_kinds.all_names():
-        registered = ", ".join(constraint_kinds.all_names())
+    registered = set(constraint_kinds.all_names()) | _BUILTIN_CONSTRAINT_KINDS
+    if kind not in registered:
+        registered_str = ", ".join(sorted(registered))
         raise ValueError(
             f"Unknown Constraint.kind '{kind}'. "
-            f"Registered kinds: {registered}. "
+            f"Registered kinds: {registered_str}. "
             f"Use @constraint_kind('{kind}') to add a new kind."
         )
 
 
 def validate_evidence_kind(kind: str) -> None:
     """Raise ValueError if kind is not a registered evidence kind."""
-    if kind not in evidence_kinds.all_names():
-        registered = ", ".join(evidence_kinds.all_names())
+    registered = set(evidence_kinds.all_names()) | _BUILTIN_EVIDENCE_KINDS
+    if kind not in registered:
+        registered_str = ", ".join(sorted(registered))
         raise ValueError(
             f"Unknown EvidenceRef.kind '{kind}'. "
-            f"Registered kinds: {registered}. "
+            f"Registered kinds: {registered_str}. "
             f"Use @evidence_kind('{kind}') to add a new kind."
         )

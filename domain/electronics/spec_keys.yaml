@@ -1,0 +1,250 @@
+# domain/electronics/spec_keys.yaml
+# Vocabulary of canonical spec keys for electronics products.
+#
+# WHY: This is DATA not code. The parser reads this at startup.
+# Adding a new spec concept = add a row here, zero Python changes.
+# Each entry:
+#   canonical:    the stable key written to product_specs.key
+#   aliases:      lower-cased strings in raw spec text that map to this key
+#   unit_target:  the normalised unit stored in product_specs.unit
+#   value_type:   "numeric" | "text" | "count" | "boolean"
+#   extract:      regex pattern (capture group 1 = numeric value, optional group 2 = unit)
+#
+# Unknown keys fall into the "raw" bucket (key="raw:{original_key}") — never dropped.
+
+spec_keys:
+
+  # ---------------------------------------------------------------------------
+  # Memory
+  # ---------------------------------------------------------------------------
+  - canonical: ram_gb
+    aliases:
+      - ram
+      - memory
+      - internal memory
+      - installed memory
+      - system memory
+    unit_target: GB
+    value_type: numeric
+    extract: "([0-9]+(?:\\.[0-9]+)?)\\s*(?:gb|gigabyte)?"
+
+  - canonical: storage_gb
+    aliases:
+      - storage
+      - internal storage
+      - hard disk
+      - ssd
+      - hard drive
+      - hdd
+      - emmc
+      - flash storage
+      - built-in storage
+    unit_target: GB
+    value_type: numeric
+    extract: "([0-9]+(?:\\.[0-9]+)?)\\s*(?:tb|terabyte|gb|gigabyte)?"
+
+  # ---------------------------------------------------------------------------
+  # Display
+  # ---------------------------------------------------------------------------
+  - canonical: screen_inch
+    aliases:
+      - screen size
+      - display size
+      - display
+      - screen
+      - panel size
+      - viewable area
+    unit_target: inch
+    value_type: numeric
+    extract: "([0-9]+(?:\\.[0-9]+)?)\\s*(?:inch|in|\"|''|cms?|cm)?"
+
+  - canonical: resolution
+    aliases:
+      - resolution
+      - screen resolution
+      - display resolution
+      - native resolution
+    unit_target: ""
+    value_type: text
+    extract: ""
+
+  - canonical: refresh_rate_hz
+    aliases:
+      - refresh rate
+      - panel refresh
+    unit_target: Hz
+    value_type: numeric
+    extract: "([0-9]+)\\s*(?:hz|hertz)"
+
+  # ---------------------------------------------------------------------------
+  # Weight & dimensions
+  # ---------------------------------------------------------------------------
+  - canonical: weight_kg
+    aliases:
+      - weight
+      - product weight
+      - net weight
+      - item weight
+    unit_target: kg
+    value_type: numeric
+    extract: "([0-9]+(?:\\.[0-9]+)?)\\s*(?:kg|kilogram|g|gram)?"
+
+  # ---------------------------------------------------------------------------
+  # Battery
+  # ---------------------------------------------------------------------------
+  - canonical: battery_mah
+    aliases:
+      - battery
+      - battery capacity
+      - cell capacity
+      - battery life
+      - mah
+    unit_target: mAh
+    value_type: numeric
+    extract: "([0-9]+(?:\\.[0-9]+)?)\\s*(?:mah|milliamp)"
+
+  - canonical: battery_wh
+    aliases:
+      - battery wh
+      - watt hour
+    unit_target: Wh
+    value_type: numeric
+    extract: "([0-9]+(?:\\.[0-9]+)?)\\s*(?:wh|watt.?hour)"
+
+  # ---------------------------------------------------------------------------
+  # Connectivity — ports (counts)
+  # ---------------------------------------------------------------------------
+  - canonical: usb_a_count
+    aliases:
+      - usb-a
+      - usb a
+      - usb type-a
+      - usba
+    unit_target: ""
+    value_type: count
+    extract: "([0-9]+)\\s*(?:x\\s*)?usb.?(?:type.?)?a"
+
+  - canonical: usb_c_count
+    aliases:
+      - usb-c
+      - usb c
+      - usb type-c
+      - usbc
+      - thunderbolt
+    unit_target: ""
+    value_type: count
+    extract: "([0-9]+)\\s*(?:x\\s*)?usb.?(?:type.?)?c"
+
+  - canonical: hdmi_count
+    aliases:
+      - hdmi
+      - hdmi port
+      - hdmi ports
+    unit_target: ""
+    value_type: count
+    extract: "([0-9]+)\\s*(?:x\\s*)?hdmi"
+
+  - canonical: ethernet_count
+    aliases:
+      - ethernet
+      - lan port
+      - rj45
+    unit_target: ""
+    value_type: count
+    extract: "([0-9]+)?\\s*ethernet|lan"
+
+  # ---------------------------------------------------------------------------
+  # Connectivity — wireless
+  # ---------------------------------------------------------------------------
+  - canonical: wifi_5g
+    aliases:
+      - 5g
+      - 5g connectivity
+      - 5g support
+    unit_target: ""
+    value_type: boolean
+    extract: ""
+
+  - canonical: bluetooth_version
+    aliases:
+      - bluetooth
+      - bluetooth version
+    unit_target: ""
+    value_type: text
+    extract: "([0-9]+(?:\\.[0-9]+)?)"
+
+  # ---------------------------------------------------------------------------
+  # Camera
+  # ---------------------------------------------------------------------------
+  - canonical: rear_camera_mp
+    aliases:
+      - rear camera
+      - main camera
+      - primary camera
+      - back camera
+      - camera
+    unit_target: MP
+    value_type: numeric
+    extract: "([0-9]+(?:\\.[0-9]+)?)\\s*(?:mp|megapixel)"
+
+  - canonical: front_camera_mp
+    aliases:
+      - front camera
+      - selfie camera
+      - front cam
+    unit_target: MP
+    value_type: numeric
+    extract: "([0-9]+(?:\\.[0-9]+)?)\\s*(?:mp|megapixel)"
+
+  # ---------------------------------------------------------------------------
+  # OS / Software
+  # ---------------------------------------------------------------------------
+  - canonical: os
+    aliases:
+      - os
+      - operating system
+      - platform
+    unit_target: ""
+    value_type: text
+    extract: ""
+
+  # ---------------------------------------------------------------------------
+  # Processor
+  # ---------------------------------------------------------------------------
+  - canonical: processor
+    aliases:
+      - processor
+      - cpu
+      - chipset
+      - soc
+      - chip
+    unit_target: ""
+    value_type: text
+    extract: ""
+
+  # ---------------------------------------------------------------------------
+  # Noise cancellation (headphones/earbuds)
+  # ---------------------------------------------------------------------------
+  - canonical: noise_cancellation
+    aliases:
+      - noise cancellation
+      - anc
+      - active noise cancellation
+      - noise cancelling
+    unit_target: ""
+    value_type: boolean
+    extract: ""
+
+  # ---------------------------------------------------------------------------
+  # Water resistance
+  # ---------------------------------------------------------------------------
+  - canonical: water_resistance
+    aliases:
+      - water resistance
+      - water resistant
+      - waterproof
+      - ip rating
+      - atm
+    unit_target: ""
+    value_type: text
+    extract: ""

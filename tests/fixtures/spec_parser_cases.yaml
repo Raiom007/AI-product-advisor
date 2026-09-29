@@ -1,0 +1,348 @@
+# tests/fixtures/spec_parser_cases.yaml
+# Table-driven test cases for ingest/specs_parser.py.
+#
+# FORMAT:
+#   Each case has:
+#     id:           unique test id
+#     product_id:   used for stable spec_ids
+#     spec_text:    raw input (exactly as it would appear in the CSV)
+#     expect:       dict of expected parsed values
+#                   key: canonical spec key (e.g. "ram_gb", "weight_kg")
+#                   value:
+#                     value: expected parsed numeric/string/boolean (null = unverifiable)
+#                     unit:  expected canonical unit string
+#     expect_raw:   list of "raw:XYZ" keys expected in output (unknown keys)
+#
+# ⚠ FILL IN `expect` values by running:
+#   python -c "
+#   from advisor.ingest.specs_parser import parse_specs, _split_lines
+#   import yaml, pprint
+#   cases = yaml.safe_load(open('tests/fixtures/spec_parser_cases.yaml'))['cases']
+#   for c in cases:
+#       r = parse_specs(c['spec_text'], c['product_id'])
+#       pprint.pprint({k: {'value': v['value'], 'unit': v['unit']} for k,v in r.items()})
+#       print('---')
+#   "
+# Then paste the actual output here so tests run against real parser behaviour.
+# The test is table-driven so adding new cases requires only YAML edits.
+
+cases:
+
+  # ---------------------------------------------------------------------------
+  # 1. Laptop — newline separator, colon kv
+  # ---------------------------------------------------------------------------
+  - id: laptop_newline_colon
+    product_id: TFIX001
+    spec_text: "RAM: 16GB\nStorage: 512GB\nDisplay: 15.6 inch\nWeight: 1.8 kg\nProcessor: Intel i7\nOS: Windows 11"
+    expect:
+      ram_gb:      {value: FILL_ME, unit: GB}
+      storage_gb:  {value: FILL_ME, unit: GB}
+      screen_inch: {value: FILL_ME, unit: inch}
+      weight_kg:   {value: FILL_ME, unit: kg}
+      processor:   {value: FILL_ME, unit: ""}
+      os:          {value: FILL_ME, unit: ""}
+    expect_raw: []
+
+  # ---------------------------------------------------------------------------
+  # 2. Laptop — pipe separator
+  # ---------------------------------------------------------------------------
+  - id: laptop_pipe_separator
+    product_id: TFIX002
+    spec_text: "RAM: 16GB | Storage: 512GB | Display: 15.6 inch | Battery: 41Wh"
+    expect:
+      ram_gb:      {value: FILL_ME, unit: GB}
+      storage_gb:  {value: FILL_ME, unit: GB}
+      screen_inch: {value: FILL_ME, unit: inch}
+    expect_raw: []
+
+  # ---------------------------------------------------------------------------
+  # 3. Smartphone — mixed specs
+  # ---------------------------------------------------------------------------
+  - id: smartphone_specs
+    product_id: TFIX003
+    spec_text: "RAM: 8GB | Storage: 128GB | Rear Camera: 50 MP | Battery: 5000 mAh | 5G: Yes | Display: 6.5 inch"
+    expect:
+      ram_gb:         {value: FILL_ME, unit: GB}
+      storage_gb:     {value: FILL_ME, unit: GB}
+      rear_camera_mp: {value: FILL_ME, unit: MP}
+      battery_mah:    {value: FILL_ME, unit: mAh}
+      wifi_5g:        {value: FILL_ME, unit: ""}
+      screen_inch:    {value: FILL_ME, unit: inch}
+    expect_raw: []
+
+  # ---------------------------------------------------------------------------
+  # 4. Unit conversion: weight in grams
+  # ---------------------------------------------------------------------------
+  - id: weight_in_grams
+    product_id: TFIX004
+    spec_text: "Weight: 1800g | Display: 15.6 inch"
+    expect:
+      weight_kg:   {value: FILL_ME, unit: kg}    # expected: 1.8 kg
+      screen_inch: {value: FILL_ME, unit: inch}
+    expect_raw: []
+
+  # ---------------------------------------------------------------------------
+  # 5. Unit conversion: storage in TB
+  # ---------------------------------------------------------------------------
+  - id: storage_tb_to_gb
+    product_id: TFIX005
+    spec_text: "Storage: 1TB | RAM: 32 GB"
+    expect:
+      storage_gb: {value: FILL_ME, unit: GB}    # expected: 1024 GB
+      ram_gb:     {value: FILL_ME, unit: GB}
+    expect_raw: []
+
+  # ---------------------------------------------------------------------------
+  # 6. Unknown keys → raw bucket
+  # ---------------------------------------------------------------------------
+  - id: unknown_keys_kept
+    product_id: TFIX006
+    spec_text: "RAM: 8GB | CustomField: some value | AnotherUnknown: 42"
+    expect:
+      ram_gb: {value: FILL_ME, unit: GB}
+    expect_raw:
+      - "raw:CustomField"
+      - "raw:AnotherUnknown"
+
+  # ---------------------------------------------------------------------------
+  # 7. HDMI port count
+  # ---------------------------------------------------------------------------
+  - id: hdmi_count
+    product_id: TFIX007
+    spec_text: "Ports: 2x USB-A, 1x USB-C, 1x HDMI | Display: 14 inch"
+    expect:
+      screen_inch: {value: FILL_ME, unit: inch}
+    expect_raw: []    # Ports line is a complex multi-value; likely goes to raw
+
+  # ---------------------------------------------------------------------------
+  # 8. Noise cancellation — boolean True
+  # ---------------------------------------------------------------------------
+  - id: noise_cancellation_yes
+    product_id: TFIX008
+    spec_text: "Noise Cancellation: Yes | Battery Life: 20 hours | Type: TWS"
+    expect:
+      noise_cancellation: {value: FILL_ME, unit: ""}    # expected: True
+    expect_raw: []
+
+  # ---------------------------------------------------------------------------
+  # 9. Noise cancellation — boolean False
+  # ---------------------------------------------------------------------------
+  - id: noise_cancellation_no
+    product_id: TFIX009
+    spec_text: "Noise Cancellation: No | Battery Life: 6 hours"
+    expect:
+      noise_cancellation: {value: FILL_ME, unit: ""}    # expected: False
+    expect_raw: []
+
+  # ---------------------------------------------------------------------------
+  # 10. ANC as alias for noise_cancellation
+  # ---------------------------------------------------------------------------
+  - id: anc_alias
+    product_id: TFIX010
+    spec_text: "ANC: Active Noise Cancellation | Bluetooth Version: 5.3"
+    expect:
+      noise_cancellation:  {value: FILL_ME, unit: ""}
+      bluetooth_version:   {value: FILL_ME, unit: ""}
+    expect_raw: []
+
+  # ---------------------------------------------------------------------------
+  # 11. Semicolon separator
+  # ---------------------------------------------------------------------------
+  - id: semicolon_separator
+    product_id: TFIX011
+    spec_text: "RAM: 8 GB; Storage: 256 GB; OS: Android 14"
+    expect:
+      ram_gb:     {value: FILL_ME, unit: GB}
+      storage_gb: {value: FILL_ME, unit: GB}
+      os:         {value: FILL_ME, unit: ""}
+    expect_raw: []
+
+  # ---------------------------------------------------------------------------
+  # 12. Screen size in cm (unit conversion)
+  # ---------------------------------------------------------------------------
+  - id: screen_cm
+    product_id: TFIX012
+    spec_text: "Screen Size: 39.6 cm"
+    expect:
+      screen_inch: {value: FILL_ME, unit: inch}    # ~15.6 inch
+    expect_raw: []
+
+  # ---------------------------------------------------------------------------
+  # 13. Battery in Wh (laptop style)
+  # ---------------------------------------------------------------------------
+  - id: battery_wh
+    product_id: TFIX013
+    spec_text: "Battery: 41 Wh | Weight: 1.2 kg"
+    expect:
+      weight_kg: {value: FILL_ME, unit: kg}
+    expect_raw: []
+
+  # ---------------------------------------------------------------------------
+  # 14. Completely empty spec text
+  # ---------------------------------------------------------------------------
+  - id: empty_spec_text
+    product_id: TFIX014
+    spec_text: ""
+    expect: {}
+    expect_raw: []
+
+  # ---------------------------------------------------------------------------
+  # 15. RAM in MB (edge case from older product data)
+  # ---------------------------------------------------------------------------
+  - id: ram_in_mb
+    product_id: TFIX015
+    spec_text: "RAM: 4096 MB | Storage: 64 GB"
+    expect:
+      ram_gb:     {value: FILL_ME, unit: GB}    # expected: 4.0 GB
+      storage_gb: {value: FILL_ME, unit: GB}
+    expect_raw: []
+
+  # ---------------------------------------------------------------------------
+  # 16. Water resistance text field
+  # ---------------------------------------------------------------------------
+  - id: water_resistance
+    product_id: TFIX016
+    spec_text: "Water Resistance: IP68 | Battery: 4500 mAh"
+    expect:
+      water_resistance: {value: FILL_ME, unit: ""}
+      battery_mah:      {value: FILL_ME, unit: mAh}
+    expect_raw: []
+
+  # ---------------------------------------------------------------------------
+  # 17. TV specs — screen in inch, HDMI ports
+  # ---------------------------------------------------------------------------
+  - id: tv_specs
+    product_id: TFIX017
+    spec_text: "Screen Size: 55 inch | Resolution: 4K Ultra HD | HDMI Ports: 3 | Refresh Rate: 120Hz"
+    expect:
+      screen_inch:      {value: FILL_ME, unit: inch}
+      resolution:       {value: FILL_ME, unit: ""}
+      hdmi_count:       {value: FILL_ME, unit: ""}
+      refresh_rate_hz:  {value: FILL_ME, unit: Hz}
+    expect_raw: []
+
+  # ---------------------------------------------------------------------------
+  # 18. Camera specs
+  # ---------------------------------------------------------------------------
+  - id: camera_specs
+    product_id: TFIX018
+    spec_text: "Sensor: APS-C CMOS | Megapixels: 24 | Zoom: 3x Optical | Video Resolution: 4K30fps"
+    expect:
+      rear_camera_mp: {value: FILL_ME, unit: MP}
+    expect_raw: []
+
+  # ---------------------------------------------------------------------------
+  # 19. Multiple values — processor string preserved as-is
+  # ---------------------------------------------------------------------------
+  - id: processor_text
+    product_id: TFIX019
+    spec_text: "Processor: AMD Ryzen 7 7745HX | RAM: 16 GB"
+    expect:
+      processor: {value: FILL_ME, unit: ""}
+      ram_gb:    {value: FILL_ME, unit: GB}
+    expect_raw: []
+
+  # ---------------------------------------------------------------------------
+  # 20. No separator — single spec line
+  # ---------------------------------------------------------------------------
+  - id: no_separator_single
+    product_id: TFIX020
+    spec_text: "RAM: 8GB"
+    expect:
+      ram_gb: {value: FILL_ME, unit: GB}
+    expect_raw: []
+
+  # ---------------------------------------------------------------------------
+  # 21. Dash separator kv
+  # ---------------------------------------------------------------------------
+  - id: dash_separator_kv
+    product_id: TFIX021
+    spec_text: "RAM - 16GB | Display - 15.6 inch"
+    expect:
+      ram_gb:      {value: FILL_ME, unit: GB}
+      screen_inch: {value: FILL_ME, unit: inch}
+    expect_raw: []
+
+  # ---------------------------------------------------------------------------
+  # 22. Bluetooth version number extracted
+  # ---------------------------------------------------------------------------
+  - id: bluetooth_version
+    product_id: TFIX022
+    spec_text: "Bluetooth Version: 5.3 | Battery Life: 40 hrs with case"
+    expect:
+      bluetooth_version: {value: FILL_ME, unit: ""}
+    expect_raw: []
+
+  # ---------------------------------------------------------------------------
+  # 23. Fast charging flag
+  # ---------------------------------------------------------------------------
+  - id: fast_charging_boolean
+    product_id: TFIX023
+    spec_text: "Fast Charging: Yes | Capacity: 10000 mAh"
+    expect:
+      battery_mah: {value: FILL_ME, unit: mAh}
+    expect_raw: []
+
+  # ---------------------------------------------------------------------------
+  # 24. GPS boolean on smartwatch
+  # ---------------------------------------------------------------------------
+  - id: gps_yes
+    product_id: TFIX024
+    spec_text: "GPS: Yes | Battery Life: 7 days | Water Resistance: 5 ATM"
+    expect:
+      water_resistance: {value: FILL_ME, unit: ""}
+    expect_raw: []
+
+  # ---------------------------------------------------------------------------
+  # 25-30: FILL_ME cases — add more variety once you've confirmed the parser output
+  # ---------------------------------------------------------------------------
+  - id: all_unknown_keys
+    product_id: TFIX025
+    spec_text: "FooField: bar | BazField: 123"
+    expect: {}
+    expect_raw:
+      - "raw:FooField"
+      - "raw:BazField"
+
+  - id: storage_ssd_alias
+    product_id: TFIX026
+    spec_text: "SSD: 256 GB | RAM: 8 GB"
+    expect:
+      storage_gb: {value: FILL_ME, unit: GB}
+      ram_gb:     {value: FILL_ME, unit: GB}
+    expect_raw: []
+
+  - id: front_camera
+    product_id: TFIX027
+    spec_text: "Rear Camera: 108 MP | Front Camera: 12 MP | Battery: 5000 mAh"
+    expect:
+      rear_camera_mp:   {value: FILL_ME, unit: MP}
+      front_camera_mp:  {value: FILL_ME, unit: MP}
+      battery_mah:      {value: FILL_ME, unit: mAh}
+    expect_raw: []
+
+  - id: display_alias
+    product_id: TFIX028
+    spec_text: "Panel Size: 14 inch | Internal Memory: 16 GB | Internal Storage: 512 GB"
+    expect:
+      screen_inch: {value: FILL_ME, unit: inch}
+      ram_gb:      {value: FILL_ME, unit: GB}
+      storage_gb:  {value: FILL_ME, unit: GB}
+    expect_raw: []
+
+  - id: os_android
+    product_id: TFIX029
+    spec_text: "Operating System: Android 14 | Compatible OS: Android and iOS"
+    expect:
+      os: {value: FILL_ME, unit: ""}
+    expect_raw: []
+
+  - id: mixed_known_unknown
+    product_id: TFIX030
+    spec_text: "RAM: 12 GB | Battery: 5000 mAh | CustomSpecX: foobar | Screen: 6.7 inch"
+    expect:
+      ram_gb:      {value: FILL_ME, unit: GB}
+      battery_mah: {value: FILL_ME, unit: mAh}
+      screen_inch: {value: FILL_ME, unit: inch}
+    expect_raw:
+      - "raw:CustomSpecX"
