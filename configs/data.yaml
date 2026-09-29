@@ -1,28 +1,31 @@
 # configs/data.yaml — CSV column mapping and cleaning switches
 # WHY: §0 A4 — "Catalogue has messy columns; exact names unknown until
-# data arrives." Fill after running `make ingest` (P4 data profiling).
-# ⚠ PLACEHOLDER — column names below are UNKNOWN until CSVs arrive.
+# data arrives." Filled from dev-fixture profile (scripts/make_dev_fixtures.py).
+# ⚠ UPDATE when real Mirai Labs CSVs arrive — re-run `ingest/profile.py`
+# and replace every value confirmed to differ.
 
 products:
-  id_col: UNKNOWN
-  name_col: UNKNOWN
-  brand_col: UNKNOWN
-  price_retail_col: UNKNOWN
-  price_discounted_col: UNKNOWN  # WHY: used as effective price for budget filter (§5.1)
-  category_col: UNKNOWN
-  description_col: UNKNOWN
-  specs_col: UNKNOWN             # free-text specs field → parsed by specs_parser.py
-  image_urls_col: UNKNOWN
-  image_url_separator: "|"      # most common separator; verify in profile
+  id_col: product_id
+  name_col: product_name
+  brand_col: brand
+  price_retail_col: retail_price_inr      # WHY: retain for discounted>retail anomaly check
+  price_discounted_col: discounted_price_inr  # WHY: effective price for budget filter (§5.1)
+  category_col: category_tree
+  category_separator: ">>"               # e.g. "Electronics >> Laptops >> Gaming Laptop"
+  description_col: description
+  specs_col: specification_text          # free-text → parsed by specs_parser.py
+  image_urls_col: image_urls
+  image_url_separator: "|"              # confirmed from dev fixture: URLs joined with |
 
 reviews:
-  id_col: UNKNOWN
-  product_id_col: UNKNOWN        # join key to products
-  text_col: UNKNOWN
-  rating_col: UNKNOWN            # numeric; scale assumed 1-5, verify in profile
-  date_col: UNKNOWN
-  helpful_votes_col: UNKNOWN
-  reviewer_id_col: UNKNOWN
+  id_col: review_id
+  product_id_col: product_id             # join key to products
+  text_col: review_text
+  title_col: review_title
+  rating_col: rating                     # numeric 1–5
+  date_col: review_date                  # format: YYYY-MM-DD
+  helpful_votes_col: helpful_votes
+  reviewer_id_col: reviewer_id
 
 cleaning:
   dedupe: true
@@ -30,3 +33,11 @@ cleaning:
   injection_flag: true           # WHY: flag, never delete — data, not instructions (§5.8)
   price_currency: INR
   price_effective_field: price_discounted   # field used for budget constraints
+  duplicate_keep_strategy: most_reviews    # keep canonical = product with most reviews
+  category_depth: 3              # L1 > L2 > L3 after splitting on category_separator
+
+dev_fixtures:
+  path: data/dev_fixtures        # synthetic only; swap for real ADVISOR_RAW_DIR when available
+  products_file: products.csv
+  reviews_file: reviews.csv
+
