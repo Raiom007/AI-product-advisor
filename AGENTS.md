@@ -14,7 +14,8 @@ Read `docs/SIGNOFF.md` at the start of every task.
 - Only the owner changes this file. Never edit it yourself.
 
 ## Data confidentiality (SOW §14)
-- Raw CSVs live OUTSIDE this workspace at `$ADVISOR_RAW_DIR`. Never commit them, never open or print them.
+- Raw CSVs live inside this repo at `data/raw/` (path in `$ADVISOR_RAW_DIR`), protected by `.gitignore`, never by being outside the workspace. Never remove `data/` from `.gitignore`. Never commit them, never open or print them.
+- Never run `git add .` or `git add -A` in this repo — add files by explicit path only, so a `.gitignore` mistake can't silently stage `data/`.
 - You may read only `data/sample/` (small, PII-redacted) and `data/profile/` (aggregates).
 - Never print raw review or product rows in a terminal. Print counts and aggregates.
 - Never paste data into prompts, tests, ADRs or commit messages. Test fixtures are synthetic.
