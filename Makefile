@@ -37,7 +37,12 @@ lint:
 # Targets below are stubs until the relevant prompts are implemented.
 # ---------------------------------------------------------------------------
 ingest:
-	@echo "not implemented yet (P5 — data cleaning + SQLite load)"
+	$(VENV_PYTHON) -m advisor.ingest \
+	    --raw-dir "$${ADVISOR_RAW_DIR:-data/dev_fixtures}" \
+	    --db data/advisor.db \
+	    --log data/processed/cleaning_log.jsonl \
+	    --docs docs/data_cleaning.md
+
 
 run:
 	@echo "not implemented yet (P19 — Streamlit UI)"
