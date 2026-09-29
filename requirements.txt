@@ -15,6 +15,16 @@ pydantic-settings>=2.3,<3
 pyyaml>=6.0,<7
 
 # ---------------------------------------------------------------------------
+# Ingest & offline processing (§5.1 — profile, clean, dedupe)
+# ---------------------------------------------------------------------------
+
+# DataFrame operations for profile.py, clean pipeline, and eval harness.
+# WHY: rejected pandas-alternatives (polars, plain csv) because the eval harness
+# and cleaning scripts need groupby/merge/quantile — pandas is the ecosystem standard.
+pandas>=2.2,<3
+
+
+# ---------------------------------------------------------------------------
 # LLM providers (§9: LLM primary/fallback rows)
 # WARNING: verify current free-tier model IDs on Day 4 via `make probe`.
 # ARCHITECTURE.md §0 A3 notes gemini-2.0-flash and text-embedding-004
