@@ -51,18 +51,11 @@ def main() -> None:
     t1 = time.time()
     print(f"Indices loaded in {t1 - t0:.2f}s")
 
-    print("\nEmbedding query...")
-    t2 = time.time()
-    query_emb = embedder.embed_queries([args.query])[0]
-    t3 = time.time()
-    print(f"Query embedded in {t3 - t2:.2f}s")
-
     print(f"\nRunning hybrid retrieval for: '{args.query}'")
     t4 = time.time()
 
     results = hybrid_search(
         query=args.query,
-        query_embedding=query_emb,
         allow_ids=allow_ids,
         products_kw_idx=products_kw_idx,
         reviews_kw_idx=reviews_kw_idx,

@@ -64,13 +64,24 @@ class ChromaVectorIndex(VectorIndex):
         # the same product, but since VectorIndex contract expects results mapped to
         # documents, we'll return exactly what Chroma returns. The ranking fusion
         # step handles mapping review hits back to product scores.
+        
+        # If allow_ids is very large, Chroma's $in operator becomes extremely slow.
+        # In that case, we drop the where filter, query more results, and filter locally.
+        where_args = {}
+        # HNSW ef_search limits n_results. To avoid "Probably ef or M is too small", 
+        # we can't inflate fetch_k too much. k=100 is safe.
+        fetch_k = k
+        if len(allow_ids) < 500:
+            where_args["where"] = {"product_id": {"$in": allow_ids}}
+        else:
+            fetch_k = k
 
         try:
             results = self._collection.query(
                 query_embeddings=[query_embedding],
-                n_results=k,
-                where=where_filter,
-                include=["distances", "metadatas"]
+                n_results=fetch_k,
+                include=["distances", "metadatas"],
+                **where_args
             )
         except Exception as e:
             logger.warning(f"Chroma search failed: {e}")
@@ -80,30 +91,24 @@ class ChromaVectorIndex(VectorIndex):
             return []
 
         ids = results["ids"][0]
-        # Chroma returns distance metrics. For cosine distance (default in some configs),
-        # score = 1 - distance. We assume L2 or cosine distance. We'll just invert distance
-        # so higher is better, or use 1 - distance if cosine.
-        # We will use 1.0 / (1.0 + distance) as a simple score that is higher for closer vectors.
         distances = results["distances"][0]
 
-        # If collection is reviews, id is review_id but we need to know product_id?
-        # The contract of VectorIndex search says "Returns: List of (product_id, score)".
-        # Wait, if we search reviews, we get review hits, but we need product scores.
-        # The prompt says: "(3) Review hits are aggregated to product scores."
-        # If VectorIndex.search returns (id, score), for products id is product_id.
-        # For reviews, id is review_id, and we need to look up product_id in metadata.
-        # So we should return the product_id from metadata if possible.
-
         out = []
+        allow_set = set(allow_ids) if len(allow_ids) >= 500 else None
+
         for i, doc_id in enumerate(ids):
             meta = results["metadatas"][0][i] or {}
-            # Always return product_id to satisfy VectorIndex contract,
-            # even if the doc_id is a review_id.
             p_id = meta.get("product_id", doc_id)
+            
+            if allow_set is not None and p_id not in allow_set:
+                continue
+                
             dist = distances[i]
-            # Convert distance to similarity score
             score = 1.0 / (1.0 + dist)
             out.append((p_id, score))
+            
+            if len(out) >= k:
+                break
 
         return out
 

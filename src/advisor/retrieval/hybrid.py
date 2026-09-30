@@ -19,7 +19,6 @@ logger = logging.getLogger(__name__)
 @retriever("hybrid")
 def hybrid_search(
     query: str,
-    query_embedding: list[float],
     allow_ids: list[str],
     products_kw_idx: KeywordIndex,
     reviews_kw_idx: KeywordIndex,
@@ -57,7 +56,7 @@ def hybrid_search(
     if retrievers.enabled("semantic", features):
         from advisor.retrieval.semantic import semantic_search
         sem_results = semantic_search(
-            query_embedding, allow_ids, products_vec_idx, reviews_vec_idx, k=internal_k
+            query, allow_ids, products_vec_idx, reviews_vec_idx, k=internal_k
         )
         rankings["semantic"] = sem_results
 

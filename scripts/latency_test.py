@@ -22,8 +22,6 @@ def run_latency_test():
     products_vec_idx = ChromaVectorIndex(chroma_dir, "products")
     reviews_vec_idx = ChromaVectorIndex(chroma_dir, "reviews")
     
-    embedder = LocalBgeEmbedder()
-    
     queries = [
         "gaming laptop 16gb",
         "best budget phone for elderly",
@@ -42,19 +40,17 @@ def run_latency_test():
     hybrid_times = []
     
     for q in queries:
-        q_emb = embedder.embed_queries([q])[0]
-        
         t0 = time.time()
         keyword_search(q, allow_ids, products_kw_idx, reviews_kw_idx)
         kw_times.append(time.time() - t0)
         
         t1 = time.time()
-        semantic_search(q_emb, allow_ids, products_vec_idx, reviews_vec_idx)
+        semantic_search(q, allow_ids, products_vec_idx, reviews_vec_idx)
         sem_times.append(time.time() - t1)
         
         t2 = time.time()
         hybrid_search(
-            q, q_emb, allow_ids,
+            q, allow_ids,
             products_kw_idx, reviews_kw_idx,
             products_vec_idx, reviews_vec_idx, config
         )
