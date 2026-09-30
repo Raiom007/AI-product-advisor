@@ -54,4 +54,4 @@ eval:
 	@echo "not implemented yet (P20 — full eval harness)"
 
 probe:
-	@echo "not implemented yet (P9 — LLM model probe + limits.yaml)"
+	$(VENV_PYTHON) scripts/probe_models.py
