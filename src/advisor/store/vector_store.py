@@ -74,7 +74,7 @@ class ChromaVectorIndex(VectorIndex):
         if len(allow_ids) < 500:
             where_args["where"] = {"product_id": {"$in": allow_ids}}
         else:
-            fetch_k = k
+            fetch_k = min(k * 10, self.count())
 
         try:
             results = self._collection.query(
@@ -109,6 +109,9 @@ class ChromaVectorIndex(VectorIndex):
             
             if len(out) >= k:
                 break
+                
+        if len(out) < k and len(allow_ids) >= 500:
+            logger.warning(f"Chroma post-filter starvation: requested {k}, got {len(out)} (fetched {fetch_k} for {self._collection_name})")
 
         return out
 
