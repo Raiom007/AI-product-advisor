@@ -298,3 +298,60 @@ def db_hash(conn: sqlite3.Connection) -> str:
             parts.append(json.dumps(d, sort_keys=True, default=str))
     payload = "\n".join(parts)
     return hashlib.sha256(payload.encode()).hexdigest()
+
+
+# ---------------------------------------------------------------------------
+# KeywordIndex implementation
+# ---------------------------------------------------------------------------
+
+class SQLiteKeywordIndex:
+    """KeywordIndex implementation using FTS5 virtual tables."""
+
+    def __init__(self, conn: sqlite3.Connection, table: str = "products_fts"):
+        """Initialize with a connection and target FTS table (products_fts or reviews_fts)."""
+        self._conn = conn
+        self._table = table
+
+    def search(
+        self,
+        query: str,
+        allow_ids: list[str],
+        k: int = 10,
+    ) -> list[tuple[str, float]]:
+        """Search using FTS5 bm25().
+        
+        If allow_ids is empty, returns empty list.
+        Returns: [(product_id, bm25_score), ...]
+        """
+        if not allow_ids:
+            return []
+            
+        # SQLite FTS5 query syntax can be strict. A naive approach is to use standard MATCH.
+        # Clean query by removing quotes/special characters that break FTS5
+        safe_query = " ".join(w for w in query.replace('"', ' ').split() if w.isalnum())
+        if not safe_query:
+            return []
+
+        # Build SQL IN clause for allow_ids
+        placeholders = ",".join("?" for _ in allow_ids)
+        
+        # FTS5 returns negative scores for bm25() (more negative = better),
+        # so we multiply by -1 to return a positive score where higher is better.
+        sql = f"""
+            SELECT product_id, -bm25({self._table}) as score
+            FROM {self._table}
+            WHERE {self._table} MATCH ?
+              AND product_id IN ({placeholders})
+            ORDER BY bm25({self._table})
+            LIMIT ?
+        """
+        
+        try:
+            rows = self._conn.execute(sql, [safe_query] + allow_ids + [k]).fetchall()
+        except sqlite3.OperationalError as e:
+            import logging
+            logging.getLogger(__name__).warning(f"FTS5 search failed: {e}")
+            return []
+            
+        return [(row["product_id"], float(row["score"])) for row in rows]
+

@@ -19,6 +19,9 @@ thresholds:
   vision_top_n: 3          # run vision only on top-N after pre-rank
   images_per_product: 3    # max images per vision call
 
+  # Reciprocal Rank Fusion constant (k)
+  rrf_k: 60
+
   # Confidence thresholds (§5.6)
   # WHY: margin between top-1 and top-2 score determines high/low confidence
   confidence_high_margin: 0.15
