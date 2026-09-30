@@ -10,13 +10,13 @@ import logging
 from collections import defaultdict
 from typing import Any
 
-from advisor.core.registries import retrievers
+from advisor.core.registries import retriever, retrievers
 from advisor.store.interfaces import KeywordIndex, VectorIndex
 
 logger = logging.getLogger(__name__)
 
 
-@retrievers.register("hybrid")
+@retriever("hybrid")
 def hybrid_search(
     query: str,
     query_embedding: list[float],
@@ -35,10 +35,11 @@ def hybrid_search(
     if not allow_ids:
         return []
 
-    features = config.get("features", {}).get("retrievers", {})
+    features = config.get("features", {})
     thresholds = config.get("ranking", {}).get("thresholds", {})
 
     shortlist_size = thresholds.get("shortlist_size", 8)
+    shortlist_size = max(5, min(shortlist_size, 10))
     rrf_k = thresholds.get("rrf_k", 60)
 
     # We fetch more internally to ensure good intersection for fusion
@@ -46,14 +47,14 @@ def hybrid_search(
 
     rankings: dict[str, list[tuple[str, float]]] = {}
 
-    if features.get("keyword", True):
+    if retrievers.enabled("keyword", features):
         from advisor.retrieval.keyword import keyword_search
         kw_results = keyword_search(
             query, allow_ids, products_kw_idx, reviews_kw_idx, k=internal_k
         )
         rankings["keyword"] = kw_results
 
-    if features.get("semantic", True):
+    if retrievers.enabled("semantic", features):
         from advisor.retrieval.semantic import semantic_search
         sem_results = semantic_search(
             query_embedding, allow_ids, products_vec_idx, reviews_vec_idx, k=internal_k

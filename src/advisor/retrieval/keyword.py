@@ -8,13 +8,13 @@ from __future__ import annotations
 import logging
 from collections import defaultdict
 
-from advisor.core.registries import retrievers
+from advisor.core.registries import retriever
 from advisor.store.interfaces import KeywordIndex
 
 logger = logging.getLogger(__name__)
 
 
-@retrievers.register("keyword")
+@retriever("keyword")
 def keyword_search(
     query: str,
     allow_ids: list[str],

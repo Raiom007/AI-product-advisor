@@ -8,13 +8,13 @@ from __future__ import annotations
 import logging
 from collections import defaultdict
 
-from advisor.core.registries import retrievers
+from advisor.core.registries import retriever
 from advisor.store.interfaces import VectorIndex
 
 logger = logging.getLogger(__name__)
 
 
-@retrievers.register("semantic")
+@retriever("semantic")
 def semantic_search(
     query_embedding: list[float],
     allow_ids: list[str],
