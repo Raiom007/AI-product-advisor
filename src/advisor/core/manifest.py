@@ -9,7 +9,6 @@ from __future__ import annotations
 
 import time
 from dataclasses import dataclass, field
-from typing import Optional
 
 
 @dataclass
@@ -19,16 +18,16 @@ class RunManifest:
     config_hash: str    # from load_config()["_hash"]
     profile: str        # from load_config()["_profile"]
     started_at: float = field(default_factory=time.time)
-    git_sha: Optional[str] = None       # set by service.py at startup via `git rev-parse HEAD`
-    data_hash: Optional[str] = None     # SHA-256 of SQLite + Chroma state files (set by ingest)
+    git_sha: str | None = None       # set by service.py at startup via `git rev-parse HEAD`
+    data_hash: str | None = None     # SHA-256 of SQLite + Chroma state files (set by ingest)
 
     @classmethod
     def build(
         cls,
         trace_id: str,
         config: dict,
-        git_sha: Optional[str] = None,
-    ) -> "RunManifest":
+        git_sha: str | None = None,
+    ) -> RunManifest:
         """Build a manifest from the result of load_config()."""
         return cls(
             trace_id=trace_id,

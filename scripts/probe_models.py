@@ -1,9 +1,11 @@
-import os
-import time
-import yaml
 import logging
-from pathlib import Path
+import os
+import threading
+import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from pathlib import Path
+
+import yaml
 
 try:
     from google import genai
@@ -18,125 +20,118 @@ except ImportError:
 logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 logger = logging.getLogger(__name__)
 
-MAX_PROBE_CALLS = 15
+class ProbeTracker:
+    def __init__(self, limits: dict):
+        self.limits = limits
+        self.calls = {"gemini": 0, "groq": 0}
+        self.halt = {"gemini": threading.Event(), "groq": threading.Event()}
+        self.lock = threading.Lock()
 
-def probe_gemini(report: dict, limits: dict):
-    if not genai or not os.getenv("GEMINI_API_KEY"):
-        logger.warning("Gemini SDK or API key not found. Skipping Gemini probe.")
+    def check_and_increment(self, provider: str) -> bool:
+        with self.lock:
+            if self.halt[provider].is_set():
+                return False
+            if self.calls[provider] >= self.limits.get(provider, 15):
+                logger.warning(f"Hard maximum call count reached for {provider}. Halting.")
+                self.halt[provider].set()
+                return False
+            self.calls[provider] += 1
+            return True
+
+    def trigger_halt(self, provider: str, reason: str):
+        logger.error(f"{provider} halted: {reason}")
+        self.halt[provider].set()
+
+def probe_gemini(tracker: ProbeTracker, report: dict, limits: dict):
+    if not genai or not os.getenv("GEMINI_API_KEY") or tracker.halt["gemini"].is_set():
         return
-        
+
     client = genai.Client()
     logger.info("Listing Gemini models...")
     models = list(client.models.list())
     visible_models = [m.name for m in models if "gemini" in m.name]
-    logger.info(f"Visible Gemini models: {visible_models}")
-    
     report["gemini"] = {"visible_models": visible_models}
-    
-    # Simple burst test on flash
+
     target = next((m for m in visible_models if "flash" in m), None)
     if target:
-        # Strip models/ prefix if present
         target = target.replace("models/", "")
-        logger.info(f"Burst testing {target}...")
-        
         success_count = 0
         def _call():
+            if not tracker.check_and_increment("gemini"):
+                return False
             try:
-                resp = client.models.generate_content(
-                    model=target,
-                    contents="Reply 'OK'",
-                )
+                client.models.generate_content(model=target, contents="Reply 'OK'")
                 return True
             except Exception as e:
-                err = str(e).lower()
-                if "429" in err or "quota" in err:
-                    return False
-                logger.error(f"Error calling Gemini: {e}")
+                if "429" in str(e).lower() or "quota" in str(e).lower():
+                    tracker.trigger_halt("gemini", "Quota exhausted (429)!")
                 return False
-                
+
         with ThreadPoolExecutor(max_workers=5) as executor:
             futures = [executor.submit(_call) for _ in range(5)]
             for f in as_completed(futures):
-                if f.result():
-                    success_count += 1
-                    
-        logger.info(f"Gemini burst test: {success_count}/5 succeeded.")
-        # Estimate RPM based on burst success
+                if f.result(): success_count += 1
+
         rpm = 15 if success_count >= 3 else 2
-        
-        limits[target] = {
-            "RPM": rpm,
-            "TPM": 1000000, # Default high TPM
-            "RPD": 1500
-        }
+        limits[target] = {"RPM": rpm, "TPM": 1000000, "RPD": 1500}
         report["gemini"]["burst_test"] = f"{success_count}/5 successful"
 
-def probe_groq(report: dict, limits: dict):
-    if not Groq or not os.getenv("GROQ_API_KEY"):
-        logger.warning("Groq SDK or API key not found. Skipping Groq probe.")
+def probe_groq(tracker: ProbeTracker, report: dict, limits: dict):
+    if not Groq or not os.getenv("GROQ_API_KEY") or tracker.halt["groq"].is_set():
         return
-        
+
     client = Groq()
     logger.info("Listing Groq models...")
     models = client.models.list()
     visible_models = [m.id for m in models.data]
-    logger.info(f"Visible Groq models: {visible_models}")
-    
     report["groq"] = {"visible_models": visible_models}
-    
+
     target = next((m for m in visible_models if "llama" in m.lower()), None)
     if target:
-        logger.info(f"Burst testing {target}...")
-        
         success_count = 0
         def _call():
+            if not tracker.check_and_increment("groq"):
+                return False
             try:
-                resp = client.chat.completions.create(
-                    model=target,
-                    messages=[{"role": "user", "content": "Reply 'OK'"}],
-                    max_tokens=10
-                )
+                client.chat.completions.create(model=target, messages=[{"role": "user", "content": "Reply 'OK'"}], max_tokens=10)
                 return True
             except Exception as e:
-                err = str(e).lower()
-                if "429" in err or "quota" in err:
-                    return False
-                logger.error(f"Error calling Groq: {e}")
+                if "429" in str(e).lower() or "quota" in str(e).lower():
+                    tracker.trigger_halt("groq", "Quota exhausted (429)!")
                 return False
-                
+
         with ThreadPoolExecutor(max_workers=5) as executor:
             futures = [executor.submit(_call) for _ in range(5)]
             for f in as_completed(futures):
-                if f.result():
-                    success_count += 1
-                    
-        logger.info(f"Groq burst test: {success_count}/5 succeeded.")
+                if f.result(): success_count += 1
+
         rpm = 30 if success_count == 5 else 10
-        
-        limits[target] = {
-            "RPM": rpm,
-            "TPM": 14400,
-            "RPD": 14400
-        }
+        limits[target] = {"RPM": rpm, "TPM": 14400, "RPD": 14400}
         report["groq"]["burst_test"] = f"{success_count}/5 successful"
 
 def main():
     report = {}
     limits = {}
-    
+
+    config_path = Path("configs/probe.yaml")
+    probe_caps = {"gemini": 15, "groq": 15}
+    if config_path.exists():
+        with open(config_path) as f:
+            cfg = yaml.safe_load(f) or {}
+            probe_caps = cfg.get("max_calls_per_provider", probe_caps)
+
+    tracker = ProbeTracker(probe_caps)
+
     logger.info("Starting model probe...")
-    probe_gemini(report, limits)
-    probe_groq(report, limits)
-    
-    # Save limits
+    probe_gemini(tracker, report, limits)
+    probe_groq(tracker, report, limits)
+
     configs_dir = Path("configs")
     configs_dir.mkdir(exist_ok=True)
-    
+
     with open(configs_dir / "limits.yaml", "w") as f:
         yaml.dump(limits, f)
-        
-    # Save report
+
     with open("docs/probe_report.md", "w") as f:
         f.write("# Model Probe Report\n\n")
         f.write(f"Generated at: {time.strftime('%Y-%m-%d %H:%M:%S')}\n\n")
@@ -144,7 +139,7 @@ def main():
         f.write(yaml.dump(report.get("gemini", {})))
         f.write("\n## Groq\n")
         f.write(yaml.dump(report.get("groq", {})))
-        
+
     logger.info("Probe complete. Wrote configs/limits.yaml and docs/probe_report.md")
 
 if __name__ == "__main__":

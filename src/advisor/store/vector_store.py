@@ -64,11 +64,11 @@ class ChromaVectorIndex(VectorIndex):
         # the same product, but since VectorIndex contract expects results mapped to
         # documents, we'll return exactly what Chroma returns. The ranking fusion
         # step handles mapping review hits back to product scores.
-        
+
         # If allow_ids is very large, Chroma's $in operator becomes extremely slow.
         # In that case, we drop the where filter, query more results, and filter locally.
         where_args = {}
-        # HNSW ef_search limits n_results. To avoid "Probably ef or M is too small", 
+        # HNSW ef_search limits n_results. To avoid "Probably ef or M is too small",
         # we can't inflate fetch_k too much. k=100 is safe.
         fetch_k = k
         if len(allow_ids) < 500:
@@ -99,17 +99,17 @@ class ChromaVectorIndex(VectorIndex):
         for i, doc_id in enumerate(ids):
             meta = results["metadatas"][0][i] or {}
             p_id = meta.get("product_id", doc_id)
-            
+
             if allow_set is not None and p_id not in allow_set:
                 continue
-                
+
             dist = distances[i]
             score = 1.0 / (1.0 + dist)
             out.append((p_id, score))
-            
+
             if len(out) >= k:
                 break
-                
+
         if len(out) < k and len(allow_ids) >= 500:
             logger.warning(f"Chroma post-filter starvation: requested {k}, got {len(out)} (fetched {fetch_k} for {self._collection_name})")
 

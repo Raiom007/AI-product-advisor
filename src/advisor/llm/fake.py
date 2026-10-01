@@ -25,7 +25,13 @@ class FakeLLMProvider(LLMProvider):
         self.call_count = 0
 
     def capabilities(self, model: str) -> LLMCapabilities:
-        return self._capabilities
+        vision_support = "text-only" not in model.lower()
+        return LLMCapabilities(
+            structured_output=True,
+            vision=vision_support,
+            max_context_window=8192,
+            supports_system_prompt=True
+        )
 
     def _check_triggers(self, prompt: str):
         self.call_count += 1
@@ -67,19 +73,30 @@ class FakeLLMProvider(LLMProvider):
         self._check_triggers(prompt)
 
         if self.trigger_malformed or "TRIGGER_MALFORMED" in prompt:
-            return ProviderResponse(
-                text="{malformed json...",
-                tokens_in=10,
-                tokens_out=5,
-                structured_data=None
-            )
+            # We must raise an exception so Gateway catches and retries
+            # The prompt asks for ONE repair retry
+            if "Fix it" in prompt:
+                # This is the repair retry! It works now
+                self.trigger_malformed = False
+            else:
+                raise ValueError("Malformed JSON")
 
-        # Create a dummy valid instance if possible, or just default
-        try:
-            # Pydantic v2
-            dummy = schema.model_construct()
-        except:
-            dummy = schema()
+        if images and "VisualCheck" in schema.__name__:
+            try:
+                dummy = schema(
+                    claim="Test claim",
+                    source_ref="test_ref",
+                    verdict="agree",
+                    observation=f"Fake observation from {len(images)} images",
+                    image_ids=["img1"]
+                )
+            except:
+                dummy = schema.model_construct()
+        else:
+            try:
+                dummy = schema.model_construct()
+            except:
+                dummy = schema()
 
         return ProviderResponse(
             text=dummy.model_dump_json(),

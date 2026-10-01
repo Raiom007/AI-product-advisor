@@ -52,7 +52,7 @@ def test_rrf_toy_rankings():
     }
 
     results = hybrid_search(
-        "query", [0.1]*384, ["A", "B", "C"],
+        "query", ["A", "B", "C"],
         p_kw, r_kw, p_vec, r_vec, config
     )
 
@@ -94,7 +94,7 @@ def test_allow_list_never_violated():
     }
 
     results = hybrid_search(
-        "query", [0.1]*384, ["A"],  # Only A is allowed
+        "query", ["A"],  # Only A is allowed
         p_kw, r_kw, p_vec, r_vec, config
     )
 
@@ -115,14 +115,14 @@ def test_disabling_retriever_changes_results():
     config_both = {
         "features": {"retrievers": {"keyword": True, "semantic": True}},
     }
-    res_both = hybrid_search("q", [0.1], ["A", "B"], p_kw, r_kw, p_vec, r_vec, config_both)
+    res_both = hybrid_search("q", ["A", "B"], p_kw, r_kw, p_vec, r_vec, config_both)
     assert len(res_both) == 2
 
     # Disable semantic
     config_no_sem = {
         "features": {"retrievers": {"keyword": True, "semantic": False}},
     }
-    res_no_sem = hybrid_search("q", [0.1], ["A", "B"], p_kw, r_kw, p_vec, r_vec, config_no_sem)
+    res_no_sem = hybrid_search("q", ["A", "B"], p_kw, r_kw, p_vec, r_vec, config_no_sem)
     assert len(res_no_sem) == 1
     assert res_no_sem[0][0] == "A"
 
@@ -130,7 +130,7 @@ def test_disabling_retriever_changes_results():
     config_no_kw = {
         "features": {"retrievers": {"keyword": False, "semantic": True}},
     }
-    res_no_kw = hybrid_search("q", [0.1], ["A", "B"], p_kw, r_kw, p_vec, r_vec, config_no_kw)
+    res_no_kw = hybrid_search("q", ["A", "B"], p_kw, r_kw, p_vec, r_vec, config_no_kw)
     assert len(res_no_kw) == 1
     assert res_no_kw[0][0] == "B"
 

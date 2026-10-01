@@ -10,7 +10,8 @@ You are helping build a two-week MVP. The owner must be able to explain and defe
 ## Gate: sign-off (SOW §10, §12)
 Read `docs/SIGNOFF.md` at the start of every task.
 - `status: pending` → you may edit ONLY docs, ADRs, AGENTS.md and config templates. No feature code. If asked for feature code, stop and say the gate is closed.
-- `scaffolding_allowed: no` → do not create empty packages, schemas or scripts either.
+- While `status: pending`, `scaffolding_allowed: no` also blocks empty packages, schemas and scripts; `scaffolding_allowed: yes` during `pending` permits scaffolding only, still no logic. This field is a narrower sub-permission for the waiting period ONLY.
+- Once `status: approved`, the gate is fully open and `scaffolding_allowed` is retired — do not check it. The owner should remove that line from SIGNOFF.md at that point rather than toggle it; if you see it still present and set to `no` while `status: approved`, treat it as stale, not as a live restriction, and say so rather than blocking on it.
 - Only the owner changes this file. Never edit it yourself.
 
 ## Data confidentiality (SOW §14)
@@ -19,7 +20,8 @@ Read `docs/SIGNOFF.md` at the start of every task.
 - You may read only `data/sample/` (small, PII-redacted) and `data/profile/` (aggregates).
 - Never print raw review or product rows in a terminal. Print counts and aggregates.
 - Never paste data into prompts, tests, ADRs or commit messages. Test fixtures are synthetic.
-- Do not source extra product or review data from the internet.
+- Do not source extra product or review data from the internet, EXCEPT the one dataset explicitly authorized below. Never any other external source without an equally explicit, dated authorization added to this file first.
+- **AUTHORIZED EXCEPTION** (per Hemanth Singh N, overriding the SOW §5/§9 no-external-data default): the McAuley Lab "Amazon Reviews 2023" — Electronics category (Hugging Face: `McAuley-Lab/Amazon-Reviews-2023`) may be used as the product/review dataset in place of Mirai Labs' own files. This is the *only* authorized external source.
 
 ## Architecture rules (details in ARCHITECTURE.md §1, §4, §4.1)
 1. **Layering.** A module imports `core/` and the ports (`store/interfaces.py`, `llm/base.py`) only. Never a sibling's internals. `agent/` is the only place that wires modules together.

@@ -48,8 +48,11 @@ class Gateway:
                 if not provider:
                     continue
 
-                # In a real implementation we would call provider.list_models() here
-                # We will check capabilities
+                # Cross-reference with configs/limits.yaml (the probe output)
+                if provider_name != "fake" and model_id not in self.rate_limiter.buckets:
+                    logger.debug(f"Skipping {model_id}: not present in probed limits config.")
+                    continue
+
                 caps = provider.capabilities(model_id)
 
                 # Check needs
@@ -71,13 +74,15 @@ class Gateway:
                 raise RuntimeError(f"Startup check failed: no candidate for role '{role}'")
 
     def _get_cache_key(self, model: str, role: str, prompt: str, schema: type[BaseModel] | None, params: dict) -> str:
+        data = {
+            "model": model,
+            "role": role,
+            "prompt": prompt,
+            "schema": schema.model_json_schema() if schema else None,
+            "params": params
+        }
         h = hashlib.sha256()
-        h.update(model.encode())
-        h.update(role.encode())
-        h.update(prompt.encode())
-        if schema:
-            h.update(schema.schema_json().encode())
-        h.update(json.dumps(params, sort_keys=True).encode())
+        h.update(json.dumps(data, sort_keys=True).encode())
         return h.hexdigest()
 
     def _invoke_with_retry(self, provider: LLMProvider, model: str, method: str, kwargs: dict) -> ProviderResponse:
@@ -101,13 +106,20 @@ class Gateway:
 
         raise RuntimeError("Unreachable")
 
+    def _read_cache(self, key: str) -> ProviderResponse | None:
+        if not hasattr(self, "_cache"):
+            self._cache = {}
+        return self._cache.get(key)
+
+    def _write_cache(self, key: str, resp: ProviderResponse) -> None:
+        if not hasattr(self, "_cache"):
+            self._cache = {}
+        self._cache[key] = resp
+
     def call(self, role: str, prompt: str, system: str | None = None, schema: type[T] | None = None, images: list[str] | None = None, budget: RequestBudget | None = None, tracer: Tracer | None = None) -> ProviderResponse:
-        if budget:
-            budget.check()
-
         candidates = self.models_config["roles"][role]["candidates"]
-
         last_err = None
+
         for cand in candidates:
             provider_name = cand["provider"]
             model = cand["model"]
@@ -119,16 +131,25 @@ class Gateway:
 
             cache_key = self._get_cache_key(model, role, prompt, schema, params)
 
-            # (In reality we'd read from cache_dir here, omitted for brevity)
+            cached = self._read_cache(cache_key)
+            if cached:
+                logger.info(f"Cache hit for {model}/{role}")
+                if tracer: tracer.span("model_call", model=model, cache_hit=True)
+                return cached
 
-            # Rate limiter
+            if budget:
+                # We charge before calling so that if it fails due to limits, we don't call.
+                # However, if we fallback, charging again might be double charging?
+                # We will charge just before the call to the provider.
+                budget.charge(role, calls=1)
+
             try:
-                # Estimate tokens
                 est = len(prompt) // 4
                 self.rate_limiter.wait_if_needed(model, estimated_tokens=est)
             except Exception as e:
                 logger.warning(f"Rate limiter rejected {model}: {e}")
-                continue # Try next fallback
+                last_err = e
+                continue
 
             try:
                 kwargs = {
@@ -139,22 +160,30 @@ class Gateway:
                     "temperature": params.get("temperature", 0.0),
                 }
 
+                resp = None
                 if schema:
                     kwargs["schema"] = schema
-                    resp = self._invoke_with_retry(provider, model, "structured", kwargs)
+                    try:
+                        resp = self._invoke_with_retry(provider, model, "structured", kwargs)
+                    except Exception as e:
+                        if "parse" in str(e).lower() or "validation" in str(e).lower() or "malformed json" in str(e).lower():
+                            logger.warning(f"Malformed JSON from {model}. Attempting 1 repair retry...")
+                            repair_kwargs = kwargs.copy()
+                            repair_kwargs["prompt"] = prompt + f"\n\nYou failed to provide valid JSON matching the schema. Error: {e}. Fix it."
+                            if budget: budget.charge(role, calls=1) # charge for retry
+                            resp = self._invoke_with_retry(provider, model, "structured", repair_kwargs)
+                        else:
+                            raise e
                 else:
                     kwargs["max_tokens"] = params.get("max_output_tokens") or params.get("max_tokens")
                     resp = self._invoke_with_retry(provider, model, "complete", kwargs)
 
                 self.rate_limiter.record_usage(model, resp.tokens_in + resp.tokens_out)
 
-                if budget:
-                    budget.consume(calls=1)
-
                 if tracer:
-                    tracer.span("model_call", model=model, tokens_in=resp.tokens_in, tokens_out=resp.tokens_out)
+                    tracer.span("model_call", model=model, tokens_in=resp.tokens_in, tokens_out=resp.tokens_out, cache_hit=False)
 
-                # Cache write here
+                self._write_cache(cache_key, resp)
                 return resp
 
             except Exception as e:

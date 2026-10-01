@@ -12,32 +12,31 @@ from __future__ import annotations
 import pytest
 
 from advisor.core.registries import (
+    constraint_kind,
     constraint_kinds,
+    eval_suites,
+    evidence_kind,
     evidence_kinds,
+    fake_signal,
     fake_signals,
+    guardrail,
     guardrails,
+    provider,
+    providers,
+    ranking_signal,
     ranking_signals,
+    retriever,
+    retrievers,
+    suite,
+    # decorator shortcuts
+    tool,
     tools,
     validate_constraint_kind,
     validate_evidence_kind,
-    verifiers,
-    providers,
-    retrievers,
-    eval_suites,
-    # decorator shortcuts
-    tool,
-    ranking_signal,
-    fake_signal,
-    guardrail,
-    constraint_kind,
-    evidence_kind,
-    retriever,
-    provider,
-    suite,
     verifier,
+    verifiers,
 )
 from advisor.core.schemas import ScoreBreakdown
-
 
 # ---------------------------------------------------------------------------
 # Helpers

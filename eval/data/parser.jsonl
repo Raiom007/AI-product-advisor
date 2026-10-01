@@ -1,0 +1,30 @@
+{"query": "laptop under 50k", "expected": {"category": "Electronics", "budget_max": 50000, "budget_min": null, "constraints": []}}
+{"query": "I need a gaming phone", "expected": {"category": "Electronics", "budget_max": null, "budget_min": null, "constraints": []}}
+{"query": "best camera for vlogging under 1 lakh", "expected": {"category": "Electronics", "budget_max": 100000, "budget_min": null, "constraints": []}}
+{"query": "cheap earphones", "expected": {"category": "Electronics", "budget_max": null, "budget_min": null, "constraints": []}}
+{"query": "tv with 4k display under 40000", "expected": {"category": "Electronics", "budget_max": 40000, "budget_min": null, "constraints": [{"kind": "must_have", "key": "resolution", "op": "eq", "value": "4k"}]}}
+{"query": "tablet for reading", "expected": {"category": "Electronics", "budget_max": null, "budget_min": null, "constraints": []}}
+{"query": "smartwatch under 5000", "expected": {"category": "Electronics", "budget_max": 5000, "budget_min": null, "constraints": []}}
+{"query": "wireless mouse with bluetooth", "expected": {"category": "Electronics", "budget_max": null, "budget_min": null, "constraints": [{"kind": "must_have", "key": "connectivity", "op": "eq", "value": "bluetooth"}]}}
+{"query": "mechanical keyboard under 10k", "expected": {"category": "Electronics", "budget_max": 10000, "budget_min": null, "constraints": [{"kind": "must_have", "key": "keyboard_type", "op": "eq", "value": "mechanical"}]}}
+{"query": "good monitor for coding", "expected": {"category": "Electronics", "budget_max": null, "budget_min": null, "constraints": []}}
+{"query": "16gb ram laptop under 80k", "expected": {"category": "Electronics", "budget_max": 80000, "budget_min": null, "constraints": [{"kind": "must_have", "key": "ram", "op": "gte", "value": 16}]}}
+{"query": "printer under 10000", "expected": {"category": "Electronics", "budget_max": 10000, "budget_min": null, "constraints": []}}
+{"query": "hard drive 1tb", "expected": {"category": "Electronics", "budget_max": null, "budget_min": null, "constraints": [{"kind": "must_have", "key": "capacity", "op": "gte", "value": 1}]}}
+{"query": "noise cancelling headphones", "expected": {"category": "Electronics", "budget_max": null, "budget_min": null, "constraints": [{"kind": "must_have", "key": "feature", "op": "eq", "value": "noise cancelling"}]}}
+{"query": "power bank 20000mah", "expected": {"category": "Electronics", "budget_max": null, "budget_min": null, "constraints": [{"kind": "must_have", "key": "capacity", "op": "gte", "value": 20000}]}}
+{"query": "50 hazaar tak ka accha phone", "expected": {"category": "Electronics", "budget_max": 50000, "budget_min": null, "constraints": []}}
+{"query": "office ke liye sasta laptop", "expected": {"category": "Electronics", "budget_max": null, "budget_min": null, "constraints": []}}
+{"query": "gaming PC under 1 lac", "expected": {"category": "Electronics", "budget_max": 100000, "budget_min": null, "constraints": []}}
+{"query": "accha DSLR camera chahiye", "expected": {"category": "Electronics", "budget_max": null, "budget_min": null, "constraints": []}}
+{"query": "20k tak ka smartwatch", "expected": {"category": "Electronics", "budget_max": 20000, "budget_min": null, "constraints": []}}
+{"query": "headphones noise cancellation ke saath", "expected": {"category": "Electronics", "budget_max": null, "budget_min": null, "constraints": [{"kind": "must_have", "key": "feature", "op": "eq", "value": "noise cancelling"}]}}
+{"query": "10000 ke budget mein printer", "expected": {"category": "Electronics", "budget_max": 10000, "budget_min": null, "constraints": []}}
+{"query": "video editing ke liye 40k ka laptop", "expected": {"category": "Electronics", "budget_max": 40000, "budget_min": null, "constraints": []}}
+{"query": "5g phone chahiye under 25000", "expected": {"category": "Electronics", "budget_max": 25000, "budget_min": null, "constraints": [{"kind": "must_have", "key": "network", "op": "eq", "value": "5g"}]}}
+{"query": "power bank 10000mah se zyada", "expected": {"category": "Electronics", "budget_max": null, "budget_min": null, "constraints": [{"kind": "must_have", "key": "capacity", "op": "gte", "value": 10000}]}}
+{"query": "sasta tablet reading ke liye", "expected": {"category": "Electronics", "budget_max": null, "budget_min": null, "constraints": []}}
+{"query": "bluetooth mouse chahiye", "expected": {"category": "Electronics", "budget_max": null, "budget_min": null, "constraints": [{"kind": "must_have", "key": "connectivity", "op": "eq", "value": "bluetooth"}]}}
+{"query": "badhiya monitor coding ke liye", "expected": {"category": "Electronics", "budget_max": null, "budget_min": null, "constraints": []}}
+{"query": "1tb hard disk under 5k", "expected": {"category": "Electronics", "budget_max": 5000, "budget_min": null, "constraints": [{"kind": "must_have", "key": "capacity", "op": "gte", "value": 1}]}}
+{"query": "mechanical keyboard gaming ke liye", "expected": {"category": "Electronics", "budget_max": null, "budget_min": null, "constraints": [{"kind": "must_have", "key": "keyboard_type", "op": "eq", "value": "mechanical"}]}}

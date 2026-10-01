@@ -325,7 +325,7 @@ class SQLiteKeywordIndex:
         """
         if not allow_ids:
             return []
-            
+
         # SQLite FTS5 query syntax can be strict. A naive approach is to use standard MATCH.
         # Clean query by removing quotes/special characters that break FTS5
         safe_query = " ".join(w for w in query.replace('"', ' ').split() if w.isalnum())
@@ -334,7 +334,7 @@ class SQLiteKeywordIndex:
 
         # Build SQL IN clause for allow_ids
         placeholders = ",".join("?" for _ in allow_ids)
-        
+
         # FTS5 returns negative scores for bm25() (more negative = better),
         # so we multiply by -1 to return a positive score where higher is better.
         sql = f"""
@@ -345,13 +345,13 @@ class SQLiteKeywordIndex:
             ORDER BY bm25({self._table})
             LIMIT ?
         """
-        
+
         try:
             rows = self._conn.execute(sql, [safe_query] + allow_ids + [k]).fetchall()
         except sqlite3.OperationalError as e:
             import logging
             logging.getLogger(__name__).warning(f"FTS5 search failed: {e}")
             return []
-            
+
         return [(row["product_id"], float(row["score"])) for row in rows]
 

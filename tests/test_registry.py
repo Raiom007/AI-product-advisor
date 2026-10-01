@@ -6,7 +6,6 @@ import pytest
 from advisor.core.errors import RegistryError
 from advisor.core.registry import Registry
 
-
 # ---------------------------------------------------------------------------
 # Registration
 # ---------------------------------------------------------------------------

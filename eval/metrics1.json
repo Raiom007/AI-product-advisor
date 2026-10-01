@@ -1,0 +1,16 @@
+{
+  "header": {
+    "mode": "replay",
+    "suite": "e2e",
+    "data_hash": "7868732a",
+    "config_hash": "17b8d348",
+    "prompt_hashes": {
+      "parser": "bb90a77e",
+      "composer": "6fd67fb9"
+    },
+    "timestamp": "2026-09-30 11:35:28"
+  },
+  "metrics": {
+    "status": "ok"
+  }
+}

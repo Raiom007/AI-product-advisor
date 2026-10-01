@@ -8,7 +8,7 @@ from __future__ import annotations
 import logging
 from collections import defaultdict
 
-from advisor.core.registries import retriever, providers
+from advisor.core.registries import providers, retriever
 from advisor.store.interfaces import VectorIndex
 
 logger = logging.getLogger(__name__)
@@ -38,21 +38,21 @@ def semantic_search(
         List of (product_id, aggregated_score) sorted by score.
     """
     import time
-    
+
     if not allow_ids:
         return []
 
     t0 = time.time()
     embedder = _get_embedder()
     t1 = time.time()
-    
+
     query_embedding = embedder.embed_queries([query])[0]
     t2 = time.time()
-    
+
     p_results = products_idx.search(query_embedding, allow_ids, k=k)
     r_results = reviews_idx.search(query_embedding, allow_ids, k=k)
     t3 = time.time()
-    
+
     logger.warning(f"Semantic timings - Init/Fetch Embedder: {(t1-t0)*1000:.1f}ms, Embed Query: {(t2-t1)*1000:.1f}ms, Chroma Search: {(t3-t2)*1000:.1f}ms")
 
     # 3. Aggregate hits to product scores

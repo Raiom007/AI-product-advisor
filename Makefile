@@ -48,10 +48,11 @@ ingest:
 
 
 run:
-	@echo "not implemented yet (P19 — Streamlit UI)"
+	$(VENV_PYTHON) -m streamlit run src/advisor/ui/app.py
 
 eval:
-	@echo "not implemented yet (P20 — full eval harness)"
+	$(VENV_PYTHON) -m advisor.eval.run_eval --mode replay --suite e2e
+	$(VENV_PYTHON) -m advisor.eval.report
 
 probe:
 	$(VENV_PYTHON) scripts/probe_models.py

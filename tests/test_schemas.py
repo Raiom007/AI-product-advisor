@@ -3,8 +3,6 @@ RunManifest stamped on AdvisorResponse.
 """
 from __future__ import annotations
 
-import json
-
 import pytest
 from pydantic import ValidationError
 
@@ -18,14 +16,11 @@ from advisor.core.schemas import (
     ParsedQuery,
     Recommendation,
     ReviewFlag,
-    ReviewSummary,
     ScoreBreakdown,
     ToolCost,
     ToolResult,
     Verdict,
-    VisualCheck,
 )
-
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -310,16 +305,16 @@ def test_verdict_invalid_action_raises():
 # ---------------------------------------------------------------------------
 
 def test_guard_result_passed():
-    g = GuardResult(guardrail="pii_pre", stage="pre", passed=True)
-    assert g.stage == "pre"
+    g = GuardResult(guardrail="pii_prompt", stage="prompt", action="pass")
+    assert g.stage == "prompt"
 
 
 def test_guard_result_failed_pii():
-    g = GuardResult(guardrail="pii_pre", stage="pre", passed=False,
+    g = GuardResult(guardrail="pii_prompt", stage="prompt", action="redact",
                     threat="pii", detail="phone number detected")
     assert g.threat == "pii"
 
 
 def test_guard_result_invalid_stage_raises():
     with pytest.raises(ValidationError):
-        GuardResult(guardrail="x", stage="mid", passed=True)
+        GuardResult(guardrail="x", stage="mid", action="pass")

@@ -30,11 +30,11 @@ from __future__ import annotations
 import json
 import time
 import uuid
+from collections.abc import Generator
 from contextlib import contextmanager
-from dataclasses import asdict, dataclass, field
+from dataclasses import asdict, dataclass
 from pathlib import Path
-from typing import Generator, Literal, Optional
-
+from typing import Literal
 
 SpanType = Literal[
     "plan", "tool_call", "model_call", "verify", "decision", "budget", "degrade"
@@ -45,18 +45,18 @@ SpanType = Literal[
 class Span:
     trace_id: str
     span_id: str
-    parent_id: Optional[str]
+    parent_id: str | None
     ts: float
     type: SpanType
     name: str
-    input_summary: Optional[str] = None
-    output_summary: Optional[str] = None
-    latency_ms: Optional[float] = None
-    model: Optional[str] = None
-    tokens_in: Optional[int] = None
-    tokens_out: Optional[int] = None
-    cache_hit: Optional[bool] = None
-    error: Optional[str] = None
+    input_summary: str | None = None
+    output_summary: str | None = None
+    latency_ms: float | None = None
+    model: str | None = None
+    tokens_in: int | None = None
+    tokens_out: int | None = None
+    cache_hit: bool | None = None
+    error: str | None = None
 
 
 class Tracer:
@@ -77,7 +77,7 @@ class Tracer:
         self,
         span_type: SpanType,
         name: str,
-        parent_id: Optional[str] = None,
+        parent_id: str | None = None,
         **kwargs,
     ) -> Generator[Span, None, None]:
         """Context manager: yields a mutable Span, writes it on exit.

@@ -14,7 +14,10 @@ class GeminiProvider(LLMProvider):
         if genai is None:
             self._client = None
         else:
-            self._client = genai.Client()
+            try:
+                self._client = genai.Client()
+            except Exception:
+                self._client = None
 
     def capabilities(self, model: str) -> LLMCapabilities:
         # According to standard Gemini models

@@ -35,7 +35,7 @@ class RequestBudget:
     _start_time: float = field(default_factory=time.monotonic, init=False, repr=False)
 
     @classmethod
-    def from_config(cls, limits: dict) -> "RequestBudget":
+    def from_config(cls, limits: dict) -> RequestBudget:
         """Build a RequestBudget from the 'limits' section of load_config()."""
         rb = limits.get("request_budget", {})
         return cls(
@@ -79,6 +79,16 @@ class RequestBudget:
 
         self._calls_used += calls
 
+    def is_exhausted(self) -> bool:
+        """Check if total calls or wall time is nearly exhausted."""
+        if self.max_model_calls == 0: return True
+        elapsed = time.monotonic() - self._start_time
+        if elapsed >= self.max_wall_s:
+            return True
+        if self._calls_used >= self.max_model_calls:
+            return True
+        return False
+        
     def report(self) -> dict:
         """Return a serialisable snapshot for AdvisorResponse.budget_report."""
         return {

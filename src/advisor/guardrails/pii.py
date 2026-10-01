@@ -208,3 +208,37 @@ def scan(text: str) -> dict[str, int]:
     so the profile report can quantify the PII exposure.
     """
     return redact(text).hit_counts
+
+from advisor.core.registries import guardrail
+from advisor.core.schemas import GuardResult
+
+
+@guardrail(stage="prompt")("pii_prompt")
+def pii_prompt_scan(text: str) -> GuardResult:
+    res = redact(text)
+    if res.has_pii:
+        return GuardResult(
+            guardrail="pii_prompt",
+            stage="prompt",
+            action="redact",
+            reasons=[f"Found PII: {k}={v}" for k, v in res.hit_counts.items()],
+            threat="pii",
+            modified_text=res.redacted_text,
+            ext=res.hit_counts
+        )
+    return GuardResult(guardrail="pii_prompt", stage="prompt", action="pass")
+
+@guardrail(stage="output")("pii_output")
+def pii_output_scan(text: str) -> GuardResult:
+    res = redact(text)
+    if res.has_pii:
+        return GuardResult(
+            guardrail="pii_output",
+            stage="output",
+            action="redact",
+            reasons=[f"Found PII: {k}={v}" for k, v in res.hit_counts.items()],
+            threat="pii",
+            modified_text=res.redacted_text,
+            ext=res.hit_counts
+        )
+    return GuardResult(guardrail="pii_output", stage="output", action="pass")

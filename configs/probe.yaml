@@ -1,0 +1,7 @@
+# probe.yaml - configuration for the day-1 model probe script
+max_calls_per_provider:
+  # WHY: 25 calls is enough to run a 5-request parallel burst on up to 
+  # 5 different model candidates. We keep it strictly bounded so a bug 
+  # in the probe doesn't wipe out the free-tier daily quota.
+  gemini: 25
+  groq: 25

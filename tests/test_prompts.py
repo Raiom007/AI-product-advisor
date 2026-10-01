@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from advisor.core.prompts import load_prompt, list_prompts, PromptTemplate
+from advisor.core.prompts import PromptTemplate, list_prompts, load_prompt
 
 
 def _make_prompts_dir(tmp_path: Path, files: dict[str, str]) -> Path:

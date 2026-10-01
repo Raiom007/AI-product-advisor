@@ -13,7 +13,10 @@ class GroqProvider(LLMProvider):
         if Groq is None:
             self._client = None
         else:
-            self._client = Groq()
+            try:
+                self._client = Groq()
+            except Exception:
+                self._client = None
 
     def capabilities(self, model: str) -> LLMCapabilities:
         # Vision is supported on Llama 3.2 vision models

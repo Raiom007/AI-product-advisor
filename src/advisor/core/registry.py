@@ -25,7 +25,8 @@ instantiated in core/registries.py (P3).
 """
 from __future__ import annotations
 
-from typing import Any, Callable, Generic, TypeVar
+from collections.abc import Callable
+from typing import Any, Generic, TypeVar
 
 from advisor.core.errors import RegistryError
 

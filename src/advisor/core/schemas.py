@@ -91,6 +91,9 @@ class ReviewSummary(BaseModel):
     n_reviews_used: int
     n_flagged_excluded: int
 
+class ReviewSummaryBatch(BaseModel):
+    summaries: list[ReviewSummary]
+
 
 class VisualCheck(BaseModel):
     claim: str                # "has numeric keypad"
@@ -185,8 +188,10 @@ class Verdict(BaseModel):
 class GuardResult(BaseModel):
     """Outcome of one guardrail check."""
     guardrail: str                           # name registered in guardrails registry
-    stage: Literal["pre", "post"]
-    passed: bool
+    stage: Literal["input", "retrieved", "prompt", "output", "pre", "post"]
+    action: Literal["pass", "redact", "block"]
+    reasons: list[str] = Field(default_factory=list)
     threat: str | None = None             # "pii" | "injection" | "grounding" | "constraint_violation"
     detail: str | None = None
+    modified_text: str | None = None      # The redacted text if action == 'redact'
     ext: dict[str, Any] = Field(default_factory=dict)

@@ -5,7 +5,6 @@ sorted by rating. This lives in eval/ and shares only the DB.
 """
 from __future__ import annotations
 
-import sqlite3
 from pathlib import Path
 
 from advisor.store.sqlite_store import open_db
@@ -56,7 +55,7 @@ def run_baseline(
         LIMIT ?
     """
     params.append(k)
-    
+
     rows = conn.execute(sql, params).fetchall()
 
     result = [(row["product_id"], float(row["score"])) for row in rows]

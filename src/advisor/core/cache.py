@@ -32,7 +32,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 
 class DiskCache:
@@ -46,7 +46,7 @@ class DiskCache:
         shard = key[:2]
         return self._root / shard / f"{key}.json"
 
-    def get(self, key: str) -> Optional[Any]:
+    def get(self, key: str) -> Any | None:
         """Return the cached value, or None on cache miss."""
         p = self._path(key)
         if not p.exists():

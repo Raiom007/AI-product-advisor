@@ -33,7 +33,8 @@ Zero edits to core/ needed.
 """
 from __future__ import annotations
 
-from typing import Any, Callable, TypeVar
+from collections.abc import Callable
+from typing import TypeVar
 
 from advisor.core.registry import Registry
 
