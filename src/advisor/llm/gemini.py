@@ -5,6 +5,8 @@ try:
 except ImportError:
     genai = None
 
+import os
+
 from advisor.llm.base import LLMProvider, ProviderResponse, T
 from advisor.llm.capabilities import LLMCapabilities
 
@@ -15,8 +17,13 @@ class GeminiProvider(LLMProvider):
             self._client = None
         else:
             try:
-                self._client = genai.Client()
+                self._client = genai.Client(
+                    api_key=os.environ.get("GEMINI_API_KEY"),
+                    http_options={"timeout": 15.0}
+                )
             except Exception:
+                import traceback
+                traceback.print_exc()
                 self._client = None
 
     def capabilities(self, model: str) -> LLMCapabilities:
@@ -80,11 +87,25 @@ class GeminiProvider(LLMProvider):
         if not self._client:
             raise RuntimeError("google-genai SDK not installed")
 
+        schema_dict = schema.model_json_schema()
+
+        def _strip_additional_properties(d):
+            if isinstance(d, dict):
+                if "additionalProperties" in d:
+                    del d["additionalProperties"]
+                for v in d.values():
+                    _strip_additional_properties(v)
+            elif isinstance(d, list):
+                for item in d:
+                    _strip_additional_properties(item)
+
+        _strip_additional_properties(schema_dict)
+
         config = types.GenerateContentConfig(
             temperature=temperature,
             system_instruction=system,
             response_mime_type="application/json",
-            response_schema=schema
+            response_schema=schema_dict
         )
 
         contents = self._prepare_contents(prompt, images)

@@ -1,6 +1,7 @@
 """Agent planner (§5.10)."""
-from advisor.agent.state import PlanStep, AgentState
+from advisor.agent.state import AgentState, PlanStep
 from advisor.core.schemas import ParsedQuery
+
 
 def default_plan(parsed: ParsedQuery) -> list[PlanStep]:
     """Default static plan graph."""
@@ -21,5 +22,5 @@ def create_plan(state: AgentState, use_llm_planner: bool = False, context: dict 
         # LLM planner behind feature flag
         # Sees ONLY tool descriptions + ParsedQuery (no raw untrusted text)
         raise NotImplementedError("LLM planner not yet implemented")
-    
+
     return default_plan(state.parsed if state.parsed else ParsedQuery(language="en", query_en=state.query))

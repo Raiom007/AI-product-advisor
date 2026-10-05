@@ -1,6 +1,6 @@
 """Deterministic claim extraction for vision (§5.5)."""
 import re
-from typing import Dict, List, Any
+from typing import Any
 
 # Keywords that suggest a visual claim
 VISUAL_PATTERNS = [
@@ -10,7 +10,7 @@ VISUAL_PATTERNS = [
     (r"\b(?:included|in the box|accessories|charger|cable)\b", "included accessories"),
 ]
 
-def extract_claims(evidence_pool: List[Dict[str, Any]]) -> List[Dict[str, str]]:
+def extract_claims(evidence_pool: list[dict[str, Any]]) -> list[dict[str, str]]:
     """Extract checkable claims from spec lines and reviews.
     
     evidence_pool: list of dicts like {"id": "spec:P1:4", "text": "...", "kind": "spec_line"}
@@ -18,11 +18,11 @@ def extract_claims(evidence_pool: List[Dict[str, Any]]) -> List[Dict[str, str]]:
     """
     claims = []
     seen = set()
-    
+
     for item in evidence_pool:
         text = item.get("text", "").lower()
         source_id = item.get("id")
-        
+
         for pattern, claim_type in VISUAL_PATTERNS:
             if re.search(pattern, text):
                 claim_text = f"Check if {claim_type} is present/visible"
@@ -34,5 +34,5 @@ def extract_claims(evidence_pool: List[Dict[str, Any]]) -> List[Dict[str, str]]:
                         "raw_text": item.get("text", "")
                     })
                     seen.add(key)
-                    
+
     return claims

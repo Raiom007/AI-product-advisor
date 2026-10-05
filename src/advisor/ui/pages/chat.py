@@ -1,9 +1,10 @@
 """Chat page — query box, clarification turn, recommendation cards."""
 import uuid
-import streamlit as st
-from advisor.service import advise
-from advisor.core.schemas import AdvisorResponse, Recommendation
 
+import streamlit as st
+
+from advisor.core.schemas import AdvisorResponse, Recommendation
+from advisor.service import advise
 
 # ── session state helpers ─────────────────────────────────────────────────────
 
@@ -38,7 +39,22 @@ def _render_card(rec: Recommendation, rank: int, all_recs: list[Recommendation])
         # Header row
         col_title, col_conf = st.columns([4, 1])
         with col_title:
-            st.subheader(f"#{rank}  {rec.product_id}")
+            # Fetch product name from DB to display instead of raw ID
+            product_name = rec.product_id
+            try:
+                from pathlib import Path
+
+                from advisor.core.config import load_config
+                from advisor.store.sqlite_store import open_db
+                cfg = load_config()
+                db_path = Path(cfg.get("database", {}).get("sqlite_path", "data/advisor.db"))
+                conn = open_db(db_path)
+                row = conn.execute("SELECT name FROM products WHERE product_id = ?", [rec.product_id]).fetchone()
+                if row and row["name"]:
+                    product_name = row["name"]
+            except Exception:
+                pass
+            st.subheader(f"#{rank}  {product_name}")
         with col_conf:
             st.markdown(f"Confidence {_conf_badge(rec.confidence)}")
 

@@ -1,12 +1,18 @@
 """Tests for explain/ — grounding_validator and render (§5.7, §5.8 Fabrication row)."""
 from __future__ import annotations
 
-import pytest
-from advisor.explain.grounding_validator import validate_statement, validate_composition, StatementOut, ValidationResult
-from advisor.explain.composer import ProductComposition, ComposerResponse
-from advisor.explain.render import render_recommendation, template_recommendation, make_abstention_response
 from advisor.core.schemas import ScoreBreakdown
-
+from advisor.explain.composer import ProductComposition
+from advisor.explain.grounding_validator import (
+    StatementOut,
+    validate_composition,
+    validate_statement,
+)
+from advisor.explain.render import (
+    make_abstention_response,
+    render_recommendation,
+    template_recommendation,
+)
 
 # ── shared fixtures ──────────────────────────────────────────────────────────
 

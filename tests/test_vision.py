@@ -1,16 +1,13 @@
 """Tests for vision (§5.5): fetch, claims, verifier, degrade, contradiction."""
 from __future__ import annotations
 
-import io
-import pytest
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
 
-from advisor.vision.claims import extract_claims
-from advisor.vision.verifier import verify_product_images, run_vision_for_shortlist
-from advisor.core.schemas import VisualCheck
 from advisor.core.budget import RequestBudget
+from advisor.core.schemas import VisualCheck
+from advisor.vision.claims import extract_claims
 from advisor.vision.schemas import VisionResponse
-
+from advisor.vision.verifier import verify_product_images
 
 # ── helpers ─────────────────────────────────────────────────────────────────
 
@@ -78,7 +75,7 @@ def test_fetch_broken_url():
 
 
 def test_fetch_oversize_image():
-    from advisor.vision.fetch import fetch_image, MAX_SIZE_BYTES
+    from advisor.vision.fetch import MAX_SIZE_BYTES, fetch_image
     big_payload = b"x" * (MAX_SIZE_BYTES + 1)
 
     with patch("httpx.Client") as MockClient:

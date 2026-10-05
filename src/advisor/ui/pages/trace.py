@@ -52,9 +52,11 @@ def _span_row(span: dict):
     with st.expander(label, expanded=False):
         cols = st.columns([2, 2, 1, 1, 1])
         cols[0].caption("Input summary")
-        cols[0].code(span.get("input_summary", "—")[:300], language=None)
+        inp = span.get("input_summary") or "—"
+        cols[0].code(str(inp)[:300], language=None)
         cols[1].caption("Output summary")
-        cols[1].code(span.get("output_summary", "—")[:300], language=None)
+        out = span.get("output_summary") or "—"
+        cols[1].code(str(out)[:300], language=None)
         if span.get("model"):
             cols[2].metric("Model", span["model"])
         if span.get("tokens_in") is not None:

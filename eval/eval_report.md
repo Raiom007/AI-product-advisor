@@ -1,21 +1,22 @@
+> ⚠️ **SYNTHETIC SMOKE-TEST DATA**
+
 # Evaluation Report
 
 ## Metadata
-- **mode**: `replay`
+- **mode**: `live`
 - **suite**: `e2e`
-- **data_hash**: `7868732a`
-- **config_hash**: `17b8d348`
-- **prompt_hashes**:
-  - parser: `bb90a77e`
-  - composer: `6fd67fb9`
-- **timestamp**: `2026-09-30 11:24:44`
+- **data_hash**: `4f8c54b0`
+- **config_hash**: `dummy_config`
 
 ## Metrics vs Baseline
 | Metric | System | Baseline | Delta |
 |--------|--------|----------|-------|
-| NDCG@5 | 0.85 | 0.60 | +0.25 |
-| Recall@10 | 0.90 | 0.70 | +0.20 |
-| Hard Constraints Violations | 0 | 5 | -5 |
+| NDCG@5 | 0.50 | 0.00 | +0.50 |
+| Recall@10 | 0.50 | 0.00 | +0.50 |
+| Hard Constraints Violations | 0 | N/A | N/A |
+| Groundedness | 100.0% | N/A | N/A |
+| Median Latency | 49.2s | N/A | N/A |
+| p95 Latency | 69.5s | N/A | N/A |
 
 ## 10 Worst Queries
-1. `toy_query_2` (NDCG: 0.1)
+1. `q2` - (Smoketest Dummy)

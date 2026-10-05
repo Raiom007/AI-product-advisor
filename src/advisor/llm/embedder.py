@@ -29,7 +29,11 @@ class LocalBgeEmbedder(Embedder):
     def __init__(self) -> None:
         # Load model locally; downloads ~130MB on first run.
         # Uses CPU by default unless torch sees a GPU.
-        self._model = SentenceTransformer("BAAI/bge-small-en-v1.5")
+        try:
+            self._model = SentenceTransformer("BAAI/bge-small-en-v1.5", local_files_only=True)
+        except Exception:
+            # Fallback if not cached yet
+            self._model = SentenceTransformer("BAAI/bge-small-en-v1.5")
         self._dim = self._model.get_sentence_embedding_dimension()
 
     def embed_queries(self, texts: list[str]) -> list[list[float]]:

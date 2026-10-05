@@ -2,6 +2,10 @@
 roles:
   parser:
     candidates:
+      - provider: groq
+        model: openai/gpt-oss-120b
+        needs: ["structured_output"]
+        params: {temperature: 0, max_tokens: 512}
       - provider: gemini
         model: gemini-3.5-flash
         needs: ["structured_output"]
@@ -10,10 +14,6 @@ roles:
         model: gemini-3.1-flash-lite
         needs: ["structured_output"]
         params: {temperature: 0, max_output_tokens: 512}
-      - provider: groq
-        model: openai/gpt-oss-120b
-        needs: ["structured_output"]
-        params: {temperature: 0, max_tokens: 512}
       - provider: fake
         model: fake-parser
         needs: []
@@ -21,6 +21,10 @@ roles:
 
   summarizer:
     candidates:
+      - provider: groq
+        model: openai/gpt-oss-120b
+        needs: ["structured_output"]
+        params: {temperature: 0, max_tokens: 1024}
       - provider: gemini
         model: gemini-3.5-flash
         needs: ["structured_output"]
@@ -29,10 +33,6 @@ roles:
         model: gemini-3.1-flash-lite
         needs: ["structured_output"]
         params: {temperature: 0, max_output_tokens: 1024}
-      - provider: groq
-        model: openai/gpt-oss-120b
-        needs: ["structured_output"]
-        params: {temperature: 0, max_tokens: 1024}
       - provider: fake
         model: fake-summarizer
         needs: []
@@ -40,14 +40,14 @@ roles:
 
   vision:
     candidates:
-      - provider: gemini
-        model: gemini-3.5-flash
-        needs: ["vision"]
-        params: {temperature: 0, max_output_tokens: 512}
       - provider: groq
         model: openai/gpt-oss-120b
         needs: ["vision"]
         params: {temperature: 0, max_tokens: 512}
+      - provider: gemini
+        model: gemini-3.5-flash
+        needs: ["vision"]
+        params: {temperature: 0, max_output_tokens: 512}
       - provider: fake
         model: fake-vision
         needs: []
@@ -55,6 +55,10 @@ roles:
 
   composer:
     candidates:
+      - provider: groq
+        model: openai/gpt-oss-120b
+        needs: []
+        params: {temperature: 0, max_tokens: 2048}
       - provider: gemini
         model: gemini-3.5-flash
         needs: []
@@ -63,10 +67,6 @@ roles:
         model: gemini-3.1-flash-lite
         needs: []
         params: {temperature: 0, max_output_tokens: 2048}
-      - provider: groq
-        model: openai/gpt-oss-120b
-        needs: []
-        params: {temperature: 0, max_tokens: 2048}
       - provider: fake
         model: fake-composer
         needs: []
@@ -74,6 +74,10 @@ roles:
 
   planner:
     candidates:
+      - provider: groq
+        model: openai/gpt-oss-120b
+        needs: ["structured_output"]
+        params: {temperature: 0, max_tokens: 256}
       - provider: gemini
         model: gemini-3.5-flash
         needs: ["structured_output"]
@@ -82,10 +86,6 @@ roles:
         model: gemini-3.1-flash-lite
         needs: ["structured_output"]
         params: {temperature: 0, max_output_tokens: 256}
-      - provider: groq
-        model: openai/gpt-oss-120b
-        needs: ["structured_output"]
-        params: {temperature: 0, max_tokens: 256}
       - provider: fake
         model: fake-planner
         needs: []

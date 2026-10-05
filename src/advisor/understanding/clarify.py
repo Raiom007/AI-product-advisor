@@ -1,6 +1,7 @@
 """Ambiguity rule (§5.3)."""
 from advisor.core.schemas import ParsedQuery
 
+
 def apply_ambiguity_rule(pq: ParsedQuery):
     """Set needs_clarification and clarifying_question if ambiguous."""
     contradictory_budget = False
@@ -26,17 +27,17 @@ def merge_clarification(prev: ParsedQuery, new: ParsedQuery) -> ParsedQuery:
         prev.subcategory = new.subcategory
     if new.use_case:
         prev.use_case = new.use_case
-    
+
     # Simple overwrite if user clarified budget
     if new.budget.min_inr is not None or new.budget.max_inr is not None:
         if new.budget.min_inr is not None:
             prev.budget.min_inr = new.budget.min_inr
         if new.budget.max_inr is not None:
             prev.budget.max_inr = new.budget.max_inr
-        
+
     prev.hard.extend(new.hard)
     prev.soft.extend(new.soft)
-    
+
     # Re-evaluate
     apply_ambiguity_rule(prev)
     return prev

@@ -3,6 +3,7 @@ import pytest
 import advisor.eval.suites  # noqa: F401
 from advisor.core.registries import eval_suites
 
+
 @pytest.mark.parametrize("suite_name", [
     "retrieval",
     "baseline_compare",

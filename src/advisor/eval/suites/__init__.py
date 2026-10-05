@@ -18,10 +18,7 @@ def baseline_compare_suite(data: list, mode: str):
     _check_data(data)
     # Stub
 
-@suite("fakes")
-def fakes_suite(data: list, mode: str):
-    _check_data(data)
-    # Stub
+
 
 @suite("vision")
 def vision_suite(data: list, mode: str):
@@ -31,12 +28,4 @@ def vision_suite(data: list, mode: str):
 
 
 
-@suite("e2e")
-def e2e_suite(data: list, mode: str):
-    _check_data(data)
-    # e2e suite calls service.advise()
-    from advisor.service import advise
-    for query in data:
-        resp = advise(query, session_id="eval")
-    # Return canned metrics or whatever
-    return {"status": "ok"}
+

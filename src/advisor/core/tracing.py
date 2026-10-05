@@ -101,7 +101,8 @@ class Tracer:
             s.error = str(exc)
             raise
         finally:
-            s.latency_ms = round((time.monotonic() - t0) * 1000, 1)
+            if s.latency_ms is None:
+                s.latency_ms = round((time.monotonic() - t0) * 1000, 1)
             self._write(s)
 
     def _write(self, span: Span) -> None:

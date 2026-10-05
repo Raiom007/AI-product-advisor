@@ -24,6 +24,11 @@ from pathlib import Path; \
 'data/raw','data/sample','data/profile',\
 'data/processed','data/cache','data/index','data/traces']];\
 print('data/ directories created (gitignored)')"
+	@echo "Pre-fetching bge-small-en-v1.5 model weights (runs once, ~130 MB)..."
+	$(VENV_PYTHON) -c "\
+from sentence_transformers import SentenceTransformer; \
+SentenceTransformer('BAAI/bge-small-en-v1.5'); \
+print('bge-small-en-v1.5 cached to HuggingFace Hub local cache.')"
 
 # ---------------------------------------------------------------------------
 test:

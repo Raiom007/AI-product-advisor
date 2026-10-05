@@ -21,6 +21,15 @@ pip install -e .
 
 *Note: For Windows, we run the python modules directly instead of using GNU Make.*
 
+## Data Setup & Ingestion
+
+Since the raw datasets are git-ignored, you must run the offline ingestion pipeline first. This script will index the McAuley-Lab Amazon Reviews dataset (or your local `data/raw`) into SQLite and ChromaDB.
+
+```powershell
+python -m advisor.ingest --raw-dir "$env:ADVISOR_RAW_DIR" --db data/advisor.db --log data/processed/cleaning_log.jsonl --docs docs/data_cleaning.md
+python -m advisor.ingest.build_index --db data/advisor.db --chroma data/chroma
+```
+
 ## Running the Application
 
 Set up your API keys and profile in your environment, then start the Streamlit UI:

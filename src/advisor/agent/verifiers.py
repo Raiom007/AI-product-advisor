@@ -1,7 +1,8 @@
 """Rule-based verifiers for agent orchestration (§5.10)."""
-from typing import Callable, Any
-from advisor.core.registry import Registry
+from collections.abc import Callable
+
 from advisor.agent.state import AgentState, ToolResult
+from advisor.core.registry import Registry
 
 verifiers_registry: Registry = Registry("verifiers")
 
@@ -76,5 +77,6 @@ def verify_grounding_ok(state: AgentState, result: ToolResult) -> VerifierResult
 @verifier("budget_ok")
 def verify_budget_ok(state: AgentState, result: ToolResult) -> VerifierResult:
     if state.budget.is_exhausted():
-        return VerifierResult("degrade", "budget exhausted")
+        if "budget exhausted" not in state.degraded:
+            return VerifierResult("degrade", "budget exhausted")
     return VerifierResult("continue")

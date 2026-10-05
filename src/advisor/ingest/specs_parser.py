@@ -93,7 +93,14 @@ def _parse_kv(line: str) -> tuple[str | None, str | None]:
             k, v = parts[0].strip(), parts[1].strip()
             if k and v:
                 return k, v
-    return None, line.strip()   # no separator → whole line is the value
+
+    # Fallback for prose-style spec sentences without a colon/hyphen split
+    m = re.search(r"([0-9]+(?:\.[0-9]+)?)\s*([a-zA-Z\"']+)?", line)
+    if m:
+        # Return the sentence as the key and the matched number+unit as the value
+        return line.strip(), m.group(0).strip()
+
+    return None, line.strip()   # no separator and no number → whole line is the value
 
 
 def _normalise_numeric(

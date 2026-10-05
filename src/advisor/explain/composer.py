@@ -2,11 +2,12 @@
 from __future__ import annotations
 
 import logging
+
 from pydantic import BaseModel
-from advisor.llm.gateway import Gateway
+
 from advisor.core.budget import RequestBudget
-from advisor.guardrails.untrusted import spotlight, spotlight_system_rule
-from advisor.core.prompts import load_prompt
+from advisor.guardrails.untrusted import spotlight
+from advisor.llm.gateway import Gateway
 
 logger = logging.getLogger(__name__)
 
@@ -80,6 +81,7 @@ def compose(
     gateway: Gateway,
     budget: RequestBudget,
     query: str = "",
+    tracer=None,
 ) -> ComposerResponse | None:
     """ONE structured call for all final products.
 
@@ -104,6 +106,7 @@ def compose(
             system=_SYSTEM,
             schema=ComposerResponse,
             budget=budget,
+            tracer=tracer,
         )
         if not resp or not resp.structured_data:
             return None

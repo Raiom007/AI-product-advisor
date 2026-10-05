@@ -9,11 +9,11 @@ Rules:
 """
 from __future__ import annotations
 
-import re
 import logging
+import re
 from dataclasses import dataclass
 
-from advisor.explain.composer import StatementOut, ProductComposition
+from advisor.explain.composer import ProductComposition, StatementOut
 
 logger = logging.getLogger(__name__)
 

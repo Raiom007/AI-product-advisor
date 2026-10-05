@@ -1,4 +1,5 @@
 from pathlib import Path
+
 import advisor.llm.embedder  # noqa: F401
 from advisor.retrieval.semantic import semantic_search
 from advisor.store.sqlite_store import open_db

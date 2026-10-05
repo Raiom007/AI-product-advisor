@@ -5,8 +5,8 @@ The underlying math helpers are left as standalone functions so tests can
 call them directly with typed arguments.
 """
 import math
-from advisor.core.registries import ranking_signal
 
+from advisor.core.registries import ranking_signal
 
 # ── math helpers (testable standalone) ──────────────────────────────────────
 

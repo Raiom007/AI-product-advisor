@@ -3,15 +3,14 @@ from __future__ import annotations
 
 import base64
 import logging
-from typing import Any
 
-from advisor.core.schemas import VisualCheck, EvidenceRef
-from advisor.core.config import load_config
-from advisor.llm.gateway import Gateway
 from advisor.core.budget import RequestBudget
+from advisor.core.config import load_config
+from advisor.core.schemas import EvidenceRef, VisualCheck
 from advisor.guardrails.untrusted import spotlight_system_rule
-from advisor.vision.fetch import fetch_image
+from advisor.llm.gateway import Gateway
 from advisor.vision.claims import extract_claims
+from advisor.vision.fetch import fetch_image
 from advisor.vision.schemas import VisionResponse
 
 logger = logging.getLogger(__name__)

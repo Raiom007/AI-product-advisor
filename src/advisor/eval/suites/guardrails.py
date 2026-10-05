@@ -19,7 +19,7 @@ def guardrails_suite(data: list, mode: str):
         if not d:
             raise ValueError("FAIL LOUDLY: no data")
     _check_data(data)
-    
+
     data_path = Path("eval/data/adversarial.jsonl")
     real_data = []
     if data_path.exists():

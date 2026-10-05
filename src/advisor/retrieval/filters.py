@@ -116,19 +116,16 @@ def _budget_sql(c: Constraint) -> tuple[str, list[Any]]:
 
 
 def _category_sql(c: Constraint) -> tuple[str, list[Any]]:
-    """Match against cat_l1, cat_l2, or cat_l3."""
+    """Match against cat_l1, cat_l2, or cat_l3 with LIKE for robustness."""
     val = str(c.value).strip()
+    subcat = str(c.ext.get("subcategory", "")).strip() if c.ext.get("subcategory") else None
+
+    # Always use the most specific term (subcat if available) for a broad LIKE search across all levels
+    search_term = subcat if subcat else val
     if c.op == "eq":
         return (
-            "(LOWER(cat_l2) = LOWER(?) OR LOWER(cat_l3) = LOWER(?) OR LOWER(cat_l1) = LOWER(?))",
-            [val, val, val],
-        )
-    if c.op == "in" and isinstance(c.value, list):
-        placeholders = ",".join("?" * len(c.value))
-        vals = [str(v).strip() for v in c.value]
-        return (
-            f"(LOWER(cat_l2) IN ({placeholders}) OR LOWER(cat_l3) IN ({placeholders}) OR LOWER(cat_l1) IN ({placeholders}))",
-            vals * 3,
+            "(LOWER(cat_l1) LIKE LOWER(?) OR LOWER(cat_l2) LIKE LOWER(?) OR LOWER(cat_l3) LIKE LOWER(?))",
+            [f"%{search_term}%", f"%{search_term}%", f"%{search_term}%"],
         )
     return "", []
 

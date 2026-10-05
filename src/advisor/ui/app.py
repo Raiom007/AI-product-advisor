@@ -7,13 +7,16 @@ Pages:
   2. Trace         — JSONL trace for the current request
   3. Fake-review inspector — flagged reviews per product
 """
-import os, sys
+import os
+import sys
+
 # Ensure the package root is importable when run directly via streamlit
 _root = str(__file__).split("src")[0] + "src"
 if _root not in sys.path:
     sys.path.insert(0, _root)
 
 import streamlit as st
+
 from advisor.core.config import load_config
 
 # ── Page config (must be first Streamlit call) ────────────────────────────────
@@ -28,7 +31,7 @@ st.set_page_config(
 with st.sidebar:
     cfg = load_config()
     profile = cfg.get("_profile", os.environ.get("ADVISOR_PROFILE", "dev"))
-    st.markdown(f"### 🛒 AI Product Advisor")
+    st.markdown("### 🛒 AI Product Advisor")
     st.caption(f"Profile: **{profile}**")
     st.divider()
 

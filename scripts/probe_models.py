@@ -5,6 +5,12 @@ import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass
+
 import yaml
 
 try:
@@ -52,7 +58,7 @@ def probe_gemini(tracker: ProbeTracker, report: dict, limits: dict):
     visible_models = [m.name for m in models if "gemini" in m.name]
     report["gemini"] = {"visible_models": visible_models}
 
-    target = next((m for m in visible_models if "flash" in m), None)
+    target = next((m for m in visible_models if "gemini-3.5-flash" in m), None)
     if target:
         target = target.replace("models/", "")
         success_count = 0
@@ -86,7 +92,7 @@ def probe_groq(tracker: ProbeTracker, report: dict, limits: dict):
     visible_models = [m.id for m in models.data]
     report["groq"] = {"visible_models": visible_models}
 
-    target = next((m for m in visible_models if "llama" in m.lower()), None)
+    target = next((m for m in visible_models if "openai/gpt-oss-120b" in m.lower()), None)
     if target:
         success_count = 0
         def _call():

@@ -162,7 +162,7 @@ def build_fts_indexes(conn: sqlite3.Connection) -> None:
 def open_db(db_path: Path) -> sqlite3.Connection:
     """Open (or create) the SQLite database; apply schema DDL."""
     db_path.parent.mkdir(parents=True, exist_ok=True)
-    conn = sqlite3.connect(str(db_path))
+    conn = sqlite3.connect(str(db_path), check_same_thread=False)
     conn.row_factory = sqlite3.Row
     conn.executescript(_DDL)
     conn.commit()

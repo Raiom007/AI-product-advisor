@@ -16,9 +16,15 @@ thresholds:
   tau_low: 0.40
   downweight_factor: 0.30  # weight applied to downweighted reviews
 
+  high_confidence:
+    near_dup: 0.9
+    burst: 0.8
+    reviewer_pattern: 0.9
+    extreme_no_detail: 2.0  # Must be tuned on DEV
+
   # Near-duplicate parameters
   near_dup_shingle_size: 5        # word n-gram size for MinHash
-  near_dup_cosine_threshold: 0.85
+  near_dup_cosine_threshold: 0.99
 
   # Burst parameters
   burst_window_hours: 48

@@ -1,6 +1,5 @@
-import pytest
 from advisor.service import advise
-from advisor.core.schemas import AdvisorResponse
+
 
 def test_advise_needs_clarification():
     # If we pass a completely ambiguous query, it should return a clarification question
@@ -11,7 +10,7 @@ def test_advise_needs_clarification():
     assert resp.recommendations == []
 
 def test_advise_no_clarification_needed(monkeypatch):
-    from advisor.core.schemas import ParsedQuery, Budget
+    from advisor.core.schemas import Budget, ParsedQuery
     # If we pass a well-formed query, it should not need clarification
     # We mock Gateway.call to simulate a successful LLM extraction
     def mock_call(self, *args, **kwargs):
@@ -32,7 +31,7 @@ def test_advise_no_clarification_needed(monkeypatch):
         )
     from advisor.llm.gateway import Gateway
     monkeypatch.setattr(Gateway, "call", mock_call)
-    
+
     resp = advise("laptop under 50k", session_id="test")
     print("MOCK RETURNED:", resp)
     assert resp.status == "ok"

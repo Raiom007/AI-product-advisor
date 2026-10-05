@@ -7,6 +7,7 @@ This is the §5.7 grounding guarantee enforced structurally, not by prompt.
 from __future__ import annotations
 
 import logging
+
 from advisor.core.schemas import Recommendation, ScoreBreakdown
 
 logger = logging.getLogger(__name__)
@@ -96,8 +97,8 @@ def template_recommendation(
     reviews_by_rating = sorted(
         reviews, key=lambda e: e.get("meta", {}).get("rating", 3), reverse=True
     )
-    top_ids = [r["id"] for r in reviews_by_rating[:2]]
-    bot_ids = [r["id"] for r in reviews_by_rating[-1:] if reviews_by_rating[-1]["id"] not in top_ids]
+    top_ids = [r["id"] for r in reviews_by_rating[:2] if "id" in r]
+    bot_ids = [r["id"] for r in reviews_by_rating[-1:] if "id" in r and r["id"] not in top_ids]
     quote_ids = (top_ids + bot_ids)[:4]
 
     return render_recommendation(

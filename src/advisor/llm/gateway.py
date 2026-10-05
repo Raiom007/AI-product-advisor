@@ -95,7 +95,9 @@ class Gateway:
                 return func(**kwargs)
             except Exception as e:
                 err_str = str(e).lower()
-                is_retryable = "429" in err_str or "500" in err_str or "502" in err_str or "503" in err_str or isinstance(e, TimeoutError)
+                # 429 is usually quota exhaustion for our free tier limits.
+                # Fast-fail it instead of retrying (which wastes time since quota won't recover).
+                is_retryable = "500" in err_str or "502" in err_str or "503" in err_str or isinstance(e, TimeoutError)
 
                 if not is_retryable or attempt == max_retries - 1:
                     raise e
@@ -160,31 +162,40 @@ class Gateway:
                     "temperature": params.get("temperature", 0.0),
                 }
 
+                from contextlib import ExitStack
+
                 resp = None
-                if schema:
-                    kwargs["schema"] = schema
-                    try:
-                        resp = self._invoke_with_retry(provider, model, "structured", kwargs)
-                    except Exception as e:
-                        if "parse" in str(e).lower() or "validation" in str(e).lower() or "malformed json" in str(e).lower():
-                            logger.warning(f"Malformed JSON from {model}. Attempting 1 repair retry...")
-                            repair_kwargs = kwargs.copy()
-                            repair_kwargs["prompt"] = prompt + f"\n\nYou failed to provide valid JSON matching the schema. Error: {e}. Fix it."
-                            if budget: budget.charge(role, calls=1) # charge for retry
-                            resp = self._invoke_with_retry(provider, model, "structured", repair_kwargs)
-                        else:
-                            raise e
-                else:
-                    kwargs["max_tokens"] = params.get("max_output_tokens") or params.get("max_tokens")
-                    resp = self._invoke_with_retry(provider, model, "complete", kwargs)
+                with ExitStack() as stack:
+                    span = None
+                    if tracer:
+                        span = stack.enter_context(tracer.span("model_call", name=role, model=model, cache_hit=False, input_summary=f"attempt={attempt if 'attempt' in locals() else 1}"))
 
-                self.rate_limiter.record_usage(model, resp.tokens_in + resp.tokens_out)
+                    if schema:
+                        kwargs["schema"] = schema
+                        try:
+                            resp = self._invoke_with_retry(provider, model, "structured", kwargs)
+                        except Exception as e:
+                            if "parse" in str(e).lower() or "validation" in str(e).lower() or "malformed json" in str(e).lower():
+                                logger.warning(f"Malformed JSON from {model}. Attempting 1 repair retry...")
+                                repair_kwargs = kwargs.copy()
+                                repair_kwargs["prompt"] = prompt + f"\n\nYou failed to provide valid JSON matching the schema. Error: {e}. Fix it."
+                                if budget: budget.charge(role, calls=1) # charge for retry
+                                resp = self._invoke_with_retry(provider, model, "structured", repair_kwargs)
+                            else:
+                                raise e
+                    else:
+                        kwargs["max_tokens"] = params.get("max_output_tokens") or params.get("max_tokens")
+                        resp = self._invoke_with_retry(provider, model, "complete", kwargs)
 
-                if tracer:
-                    tracer.span("model_call", model=model, tokens_in=resp.tokens_in, tokens_out=resp.tokens_out, cache_hit=False)
+                    self.rate_limiter.record_usage(model, resp.tokens_in + resp.tokens_out)
 
-                self._write_cache(cache_key, resp)
-                return resp
+                    if span:
+                        span.tokens_in = resp.tokens_in
+                        span.tokens_out = resp.tokens_out
+                        span.output_summary = "success"
+
+                    self._write_cache(cache_key, resp)
+                    return resp
 
             except Exception as e:
                 logger.warning(f"Provider {provider_name}/{model} failed for role {role}: {e}")
@@ -192,3 +203,4 @@ class Gateway:
                 # Fallback to next candidate
 
         raise GatewayError(f"All candidates failed for role {role}. Last error: {last_err}")
+

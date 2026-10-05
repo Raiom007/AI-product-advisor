@@ -88,7 +88,7 @@ class RequestBudget:
         if self._calls_used >= self.max_model_calls:
             return True
         return False
-        
+
     def report(self) -> dict:
         """Return a serialisable snapshot for AdvisorResponse.budget_report."""
         return {

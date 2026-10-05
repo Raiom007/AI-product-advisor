@@ -14,7 +14,7 @@ class GroqProvider(LLMProvider):
             self._client = None
         else:
             try:
-                self._client = Groq()
+                self._client = Groq(timeout=15.0)
             except Exception:
                 self._client = None
 
