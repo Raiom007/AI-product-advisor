@@ -1,10 +1,8 @@
-# AI Product Advisor MVP — Architecture Foundation
+# AI Product Advisor MVP — Architecture Foundation (As-Built)
 
 **Project:** Mirai Labs SOW v1.0 — Multimodal Product Q&A and Recommendation Agent
-**Author:** Om Rai · **Status:** DRAFT for sign-off (due Tue 29 Sep 2026, 6:00 PM)
+**Author:** Om Rai · **Status:** As-Built v1.0 (Signed-off)
 **Purpose of this file:** the single source of truth that both you and Antigravity's agents build against. Keep it in the repo at `docs/ARCHITECTURE.md` and update it when a decision changes.
-
-> ⚠️ **SOW gate:** "No feature code before sign-off." Until Mirai Labs signs off, treat everything below as design. Ask Hemanth whether scaffolding (empty folders, schemas, config) and data profiling are allowed before sign-off — see §12.
 
 ---
 
@@ -502,3 +500,13 @@ Micro-habits from SOW: daily commit + end-of-day update (done / blocked / next).
 - [ ] Every module has an interface, a fake/test double and at least one unit test before it gets a real LLM
 - [ ] `make setup && make ingest && make run` works on a clean machine; `make eval` reproduces numbers
 - [ ] Each row of §9 has a one-sentence justification you can say aloud without notes
+
+---
+
+## 14. Changes since sign-off (As-Built Deviations)
+
+| Component | Deviation | Justification / ADR |
+|---|---|---|
+| **Data Sourcing** | `ADVISOR_RAW_DIR` points to Hugging Face McAuley-Lab Amazon Reviews 2023 (Electronics) dataset. | Authorized exception per Mirai Labs (Hemanth Singh N) to bypass the "no-external-data" default restriction (ADR-0007). |
+| **API Resiliency** | Implemented aggressive 15.0s client timeouts in `gemini.py` and `groq.py`, and added short-circuit logic in `analyse_reviews` for budget exhaustion. | Prevents silent hangs when Free-Tier endpoints are unresponsive, bounding worst-case latency to SOW expectations. |
+| **Eval Metrics** | `statements_total` and per-query reports omitted from `metrics.json` outputs. | `StatementOut` mocking mismatch deferred; aggregate Recall/NDCG retained as primary performance indicators. |
