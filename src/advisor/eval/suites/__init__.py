@@ -1,6 +1,8 @@
 from advisor.core.registries import suite
 from advisor.eval.suites.guardrails import guardrails_suite
 from advisor.eval.suites.parser import parser_suite
+from advisor.eval.suites.fakes import run_fakes_suite
+from advisor.eval.suites.e2e import run_e2e_suite
 
 # TODO: Split into one-file-per-suite (per ARCHITECTURE.md §3) once fakes/vision/guardrails suites get real logic.
 

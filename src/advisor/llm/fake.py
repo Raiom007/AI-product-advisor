@@ -81,7 +81,11 @@ class FakeLLMProvider(LLMProvider):
             else:
                 raise ValueError("Malformed JSON")
 
-        if images and "VisualCheck" in schema.__name__:
+        if schema.__name__ == "VisionResponse":
+            dummy = schema(checks=[], new_observations=[])
+        elif schema.__name__ == "ParsedQuery":
+            dummy = schema(language="en", query_en=prompt[:50] if prompt else "query")
+        elif images and "VisualCheck" in schema.__name__:
             try:
                 dummy = schema(
                     claim="Test claim",

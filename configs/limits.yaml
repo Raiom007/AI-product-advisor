@@ -6,5 +6,3 @@ openai/gpt-oss-120b:
   RPD: 14400
   RPM: 30
   TPM: 14400
-request_budget:
-  max_wall_s: 120.0

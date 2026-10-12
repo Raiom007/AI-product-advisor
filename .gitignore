@@ -1,4 +1,7 @@
 .env
+.env*
+*.env
+frontend/.env*
 /data/
 *.sqlite
 *.db
@@ -7,3 +10,13 @@ __pycache__/
 .chroma/
 *.csv
 private/
+scratch/
+scratch_*
+tune_fakes.py
+eval_output.txt
+*.egg-info/
+node_modules/
+frontend/node_modules/
+frontend/dist/
+/test_parser.py
+/test_retrieve.py

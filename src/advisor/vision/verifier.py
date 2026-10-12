@@ -33,24 +33,30 @@ def verify_product_images(
 
     # 1. Deterministic claim extraction from evidence pool
     claims = extract_claims(evidence_pool)
+    if not claims:
+        return [], [], "no visual claims to verify"
 
-    # 2. Fetch images
+    # 2. Fetch images in parallel
     image_urls: list[str] = product.get("image_urls", [])[:images_per_product]
     images_b64: list[dict[str, str]] = []  # [{url, b64, img_id}]
-    for i, url in enumerate(image_urls):
+    from concurrent.futures import ThreadPoolExecutor
+
+    def _fetch_one(item):
+        i, url = item
         raw = fetch_image(url)
         if raw is None:
             logger.info(f"Product {product.get('id')}: image {url} skipped (fetch failed)")
-            continue
+            return None
         b64 = base64.b64encode(raw).decode()
-        images_b64.append({"url": url, "b64": b64, "img_id": f"img:{product.get('id')}:{i}"})
+        return {"url": url, "b64": b64, "img_id": f"img:{product.get('id')}:{i}"}
+
+    with ThreadPoolExecutor(max_workers=min(len(image_urls) or 1, 3)) as pool:
+        for res in pool.map(_fetch_one, list(enumerate(image_urls))):
+            if res is not None:
+                images_b64.append(res)
 
     if not images_b64:
         return [], [], "no images available"
-
-    if not claims:
-        # Still run to extract new observations, but with an empty claims list
-        pass
 
     # 3. Build prompt
     claim_lines = "\n".join(

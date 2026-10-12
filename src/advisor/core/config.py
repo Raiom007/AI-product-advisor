@@ -21,6 +21,12 @@ from typing import Any
 
 import yaml
 
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass
+
 # WHY: resolve() handles symlinks; parent×4 walks src/advisor/core/ → project root.
 _CONFIGS_DIR = Path(__file__).resolve().parent.parent.parent.parent / "configs"
 

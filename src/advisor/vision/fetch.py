@@ -9,7 +9,7 @@ logger = logging.getLogger(__name__)
 
 CACHE_DIR = Path("data/cache/vision_images")
 MAX_SIZE_BYTES = 5 * 1024 * 1024  # 5MB
-TIMEOUT_SEC = 5.0
+TIMEOUT_SEC = 2.0
 
 def fetch_image(url: str) -> bytes | None:
     """Fetch an image with timeout, size cap, and content-type check.

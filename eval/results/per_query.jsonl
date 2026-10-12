@@ -1,0 +1,50 @@
+{"query_id": "q1", "status": "ok", "n_recs": 5, "system_top10": ["MCA_B0C6YGWC8R", "MCA_B0B23VC2WF", "MCA_B0BGXS26QL", "MCA_B07C9YV85F", "MCA_B073GVZTSQ"], "baseline_top10": [], "latency_ms": 64672.30772972107}
+{"query_id": "q2", "status": "ok", "n_recs": 5, "system_top10": ["MCA_B09DZZ2GM6", "MCA_B07BHGD33F", "MCA_B07D3QKRW1", "MCA_B00OL4DEMC", "MCA_B07PHTYGY7"], "baseline_top10": [], "latency_ms": 141423.490524292}
+{"query_id": "q3", "status": "ok", "n_recs": 5, "system_top10": ["MCA_B08M8Y6473", "MCA_B07M87KRKR", "MCA_B0BFFXDM1V", "MCA_B074KBWL9J", "MCA_B09SN81SB8"], "baseline_top10": [], "latency_ms": 101567.7535533905}
+{"query_id": "q4", "status": "ok", "n_recs": 5, "system_top10": ["MCA_B07TQ952DH", "MCA_B08PFW1S1V", "MCA_B083P16YXL", "MCA_B08K4PNJ7C", "MCA_B000065BP9"], "baseline_top10": [], "latency_ms": 88765.16819000244}
+{"query_id": "q5", "status": "ok", "n_recs": 5, "system_top10": ["MCA_B005MKINUW", "MCA_B06ZYJ9JQ5", "MCA_B0BX74LYLM", "MCA_B0BGLDXHGY", "MCA_B07RZVPTQQ"], "baseline_top10": [], "latency_ms": 69293.90573501587}
+{"query_id": "q6", "status": "ok", "n_recs": 5, "system_top10": ["MCA_B008GAT8EU", "MCA_B0BWYPV5NY", "MCA_B00INKHXY0", "MCA_B0BWMY8JZP", "MCA_B09ZQ4GHM8"], "baseline_top10": [], "latency_ms": 91306.76627159119}
+{"query_id": "q7", "status": "ok", "n_recs": 5, "system_top10": ["MCA_B09V49FS42", "MCA_B09P29VXG1", "MCA_B08BH87FPJ", "MCA_B0BGHBL86V", "MCA_B017TK4H6G"], "baseline_top10": [], "latency_ms": 105797.98579216003}
+{"query_id": "q8", "status": "ok", "n_recs": 5, "system_top10": ["MCA_B0078YGN34", "MCA_B007EM7NMA", "MCA_B007E80K4M", "MCA_B00X3TUHWG", "MCA_B07H5S7X4X"], "baseline_top10": [], "latency_ms": 77347.74971008301}
+{"query_id": "q9", "status": "ok", "n_recs": 5, "system_top10": ["MCA_B00008SCFL", "MCA_B00TLEXZ8K", "MCA_B008ODMSO6", "MCA_B09LYWCHJX", "MCA_B00PDLRHFW"], "baseline_top10": [], "latency_ms": 101012.06183433533}
+{"query_id": "q10", "status": "ok", "n_recs": 5, "system_top10": ["MCA_B072M34RQC", "MCA_B0BNX9QVXZ", "MCA_B078GVTD9N", "MCA_B0BS8YHSVT", "MCA_B0B2JYYR6C"], "baseline_top10": [], "latency_ms": 79012.37845420837}
+{"query_id": "q11", "status": "ok", "n_recs": 5, "system_top10": ["MCA_B08YMVB98D", "MCA_B003NR57BY", "MCA_B08LXZPC1M", "MCA_B09Y1PSVTB", "MCA_B0BLHK3L8J"], "baseline_top10": [], "latency_ms": 122842.88692474365}
+{"query_id": "q12", "status": "abstained", "n_recs": 0, "system_top10": [], "baseline_top10": [], "latency_ms": 8728.984117507935}
+{"query_id": "q13", "status": "abstained", "n_recs": 0, "system_top10": [], "baseline_top10": [], "latency_ms": 6745.94259262085}
+{"query_id": "q14", "status": "abstained", "n_recs": 0, "system_top10": [], "baseline_top10": [], "latency_ms": 5213.000297546387}
+{"query_id": "q15", "status": "abstained", "n_recs": 0, "system_top10": [], "baseline_top10": [], "latency_ms": 4784.351348876953}
+{"query_id": "q16", "status": "abstained", "n_recs": 0, "system_top10": [], "baseline_top10": [], "latency_ms": 5035.270690917969}
+{"query_id": "q17", "status": "abstained", "n_recs": 0, "system_top10": [], "baseline_top10": [], "latency_ms": 4881.027698516846}
+{"query_id": "q18", "status": "abstained", "n_recs": 0, "system_top10": [], "baseline_top10": [], "latency_ms": 3636.3978385925293}
+{"query_id": "q19", "status": "abstained", "n_recs": 0, "system_top10": [], "baseline_top10": ["MCA_B0BNV9818Q", "MCA_B09FXN6G3T", "MCA_B07DCNF3T2", "MCA_B0C5B1LW2Y", "MCA_B08FRLCF2W", "MCA_B07QL578VM", "MCA_B07V5XS4MV", "MCA_B07WX7DYH3", "MCA_B09Y7QTH52", "MCA_B08PFW1S1V"], "latency_ms": 3577.963352203369}
+{"query_id": "q20", "status": "abstained", "n_recs": 0, "system_top10": [], "baseline_top10": [], "latency_ms": 5140.979528427124}
+{"query_id": "q21", "status": "abstained", "n_recs": 0, "system_top10": [], "baseline_top10": ["MCA_B09C32Y5C9"], "latency_ms": 3641.9436931610107}
+{"query_id": "q22", "status": "abstained", "n_recs": 0, "system_top10": [], "baseline_top10": ["MCA_B0C1ZGKP1V", "MCA_B092282VR7", "MCA_B0BLV7YH2W", "MCA_B0BLD1HN66", "MCA_B0BP14FP1G", "MCA_B0BLSTP5QG", "MCA_B08VHW3FCR", "MCA_B09F4R42N7", "MCA_B08PB9FFM8", "MCA_B0BRZW575H"], "latency_ms": 3589.449882507324}
+{"query_id": "q23", "status": "abstained", "n_recs": 0, "system_top10": [], "baseline_top10": [], "latency_ms": 3566.493511199951}
+{"query_id": "q24", "status": "needs_clarification", "n_recs": 0, "system_top10": [], "baseline_top10": ["MCA_B0BCFFR6TD"], "latency_ms": 3262.498617172241}
+{"query_id": "q25", "status": "abstained", "n_recs": 0, "system_top10": [], "baseline_top10": ["MCA_B07X6X461L", "MCA_B07YT8MZK4", "MCA_B083R1FLNW", "MCA_B09NKM7XK2", "MCA_B0BDSZ2KT3", "MCA_B08TLGT1SY", "MCA_B08BDM3ZJJ", "MCA_B0BPBJ6SKW", "MCA_B0BCFBKLSR", "MCA_B0861D7Z1P"], "latency_ms": 3652.52685546875}
+{"query_id": "q26", "status": "abstained", "n_recs": 0, "system_top10": [], "baseline_top10": [], "latency_ms": 3629.650354385376}
+{"query_id": "q27", "status": "abstained", "n_recs": 0, "system_top10": [], "baseline_top10": ["MCA_B07D3WRJ2K", "MCA_B01B4BY7UW", "MCA_B01J33X7NG", "MCA_B00BTQJ7SA"], "latency_ms": 3608.707904815674}
+{"query_id": "q28", "status": "abstained", "n_recs": 0, "system_top10": [], "baseline_top10": [], "latency_ms": 3595.7939624786377}
+{"query_id": "q29", "status": "abstained", "n_recs": 0, "system_top10": [], "baseline_top10": ["MCA_B09XK17BN5"], "latency_ms": 4748.677730560303}
+{"query_id": "q30", "status": "abstained", "n_recs": 0, "system_top10": [], "baseline_top10": ["MCA_B07CKBX2MG", "MCA_B00OPVJ0JW", "MCA_B094MKQMZR", "MCA_B09HRFY5LQ", "MCA_B07Y8H8STR"], "latency_ms": 4431.082010269165}
+{"query_id": "q31", "status": "abstained", "n_recs": 0, "system_top10": [], "baseline_top10": [], "latency_ms": 5172.681093215942}
+{"query_id": "q32", "status": "abstained", "n_recs": 0, "system_top10": [], "baseline_top10": [], "latency_ms": 5323.500394821167}
+{"query_id": "q33", "status": "abstained", "n_recs": 0, "system_top10": [], "baseline_top10": ["MCA_B08DCP3WZW", "MCA_B07R8PR5YZ", "MCA_B07D9DPLG8", "MCA_B0C3GDKZQT", "MCA_B09YTYML2P", "MCA_B08GX2W7Z4", "MCA_B074QQQ51L", "MCA_B0BB72TR6M"], "latency_ms": 5240.387201309204}
+{"query_id": "q34", "status": "abstained", "n_recs": 0, "system_top10": [], "baseline_top10": ["MCA_B07N93Z3M5", "MCA_B008DJ4HT0"], "latency_ms": 5081.08115196228}
+{"query_id": "q35", "status": "abstained", "n_recs": 0, "system_top10": [], "baseline_top10": ["MCA_B00TE94HJ8"], "latency_ms": 5712.1429443359375}
+{"query_id": "q36", "status": "abstained", "n_recs": 0, "system_top10": [], "baseline_top10": [], "latency_ms": 9012.950658798218}
+{"query_id": "q37", "status": "abstained", "n_recs": 0, "system_top10": [], "baseline_top10": [], "latency_ms": 4789.231061935425}
+{"query_id": "q38", "status": "needs_clarification", "n_recs": 0, "system_top10": [], "baseline_top10": [], "latency_ms": 6068.845748901367}
+{"query_id": "q39", "status": "abstained", "n_recs": 0, "system_top10": [], "baseline_top10": [], "latency_ms": 5148.991107940674}
+{"query_id": "q40", "status": "needs_clarification", "n_recs": 0, "system_top10": [], "baseline_top10": ["MCA_B09VYR3T9M", "MCA_B0BW5L2RHB"], "latency_ms": 4438.87734413147}
+{"query_id": "q41", "status": "abstained", "n_recs": 0, "system_top10": [], "baseline_top10": ["MCA_B0BLKSX7PG"], "latency_ms": 5063.691854476929}
+{"query_id": "q42", "status": "abstained", "n_recs": 0, "system_top10": [], "baseline_top10": [], "latency_ms": 5331.350088119507}
+{"query_id": "q43", "status": "abstained", "n_recs": 0, "system_top10": [], "baseline_top10": [], "latency_ms": 5393.71132850647}
+{"query_id": "q44", "status": "abstained", "n_recs": 0, "system_top10": [], "baseline_top10": ["MCA_B0BZC26QJ6", "MCA_B09ZTFT98K", "MCA_B0BR89N1H7", "MCA_B093D875M2"], "latency_ms": 4909.996271133423}
+{"query_id": "q45", "status": "needs_clarification", "n_recs": 0, "system_top10": [], "baseline_top10": [], "latency_ms": 4312.988519668579}
+{"query_id": "q46", "status": "abstained", "n_recs": 0, "system_top10": [], "baseline_top10": [], "latency_ms": 5050.129175186157}
+{"query_id": "q47", "status": "abstained", "n_recs": 0, "system_top10": [], "baseline_top10": [], "latency_ms": 4715.79384803772}
+{"query_id": "q48", "status": "needs_clarification", "n_recs": 0, "system_top10": [], "baseline_top10": ["MCA_B0BXFD4B14", "MCA_B09PHCV2PN", "MCA_B08GC2NP5T", "MCA_B08PNY1T1G", "MCA_B07QPRN3X2", "MCA_B09LS63LQM", "MCA_B08MKZ1631", "MCA_B0BNPKQ61D", "MCA_B07YFZXX8F", "MCA_B072LJ9B74"], "latency_ms": 3629.789352416992}
+{"query_id": "q49", "status": "abstained", "n_recs": 0, "system_top10": [], "baseline_top10": [], "latency_ms": 1841.90034866333}
+{"query_id": "q50", "status": "abstained", "n_recs": 0, "system_top10": [], "baseline_top10": [], "latency_ms": 3227.067232131958}

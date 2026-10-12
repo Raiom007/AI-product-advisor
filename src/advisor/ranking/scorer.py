@@ -2,6 +2,8 @@
 from advisor.core.config import load_config
 from advisor.core.registries import ranking_signals
 from advisor.core.schemas import ScoreBreakdown
+import advisor.ranking.signals  # ensure decorators run
+import advisor.reviews.sentiment  # ensure decorators run
 
 
 def gate(product: dict, constraints: list) -> bool:
@@ -11,8 +13,27 @@ def gate(product: dict, constraints: list) -> bool:
         return False
 
     for c in constraints:
-        # Evaluate real constraints here
-        pass
+        # Very basic string match for constraints on name/description
+        val_lower = str(c.value).lower()
+        name_lower = product.get("name", "").lower()
+        desc_lower = product.get("description", "").lower()
+        
+        # Extract numbers (e.g. '16' from '15-16 inch' or '36' from '36GB')
+        import re
+        nums = re.findall(r'\d+', val_lower)
+        if nums:
+            # If any of the numbers are present in the name/desc, it passes
+            passed = False
+            for num in nums:
+                if num in name_lower or num in desc_lower:
+                    passed = True
+                    break
+            if not passed:
+                return False
+        else:
+            # Fallback to string matching if no numbers (e.g. brand="apple")
+            if val_lower not in name_lower and val_lower not in desc_lower:
+                return False
     return True
 
 def score_product(product: dict, context: dict) -> tuple[ScoreBreakdown, float]:
@@ -85,7 +106,11 @@ def rank_candidates(shortlist: list[dict], context: dict, constraints: list) -> 
     
     Pass 1 = Score without V -> pick top-N -> run vision -> Pass 2 = Score with V -> final.
     """
-    # 1. Hard constraint gate
+    # 1. Hard constraint gate (includes budget constraint)
+    budget_max = context.get("budget_max_inr")
+    if budget_max:
+        shortlist = [p for p in shortlist if p.get("effective_price_inr", 0) <= budget_max]
+
     gated = [p for p in shortlist if gate(p, constraints)]
 
     # Pre-compute min/max RRF for the context

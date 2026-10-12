@@ -7,8 +7,14 @@ import requests
 
 USD_TO_INR = 83.0
 
-META_URL = "https://huggingface.co/datasets/McAuley-Lab/Amazon-Reviews-2023/resolve/main/raw/meta_categories/meta_Electronics.jsonl"
-REVIEW_URL = "https://huggingface.co/datasets/McAuley-Lab/Amazon-Reviews-2023/resolve/main/raw/review_categories/Electronics.jsonl"
+META_URLS = [
+    "https://huggingface.co/datasets/McAuley-Lab/Amazon-Reviews-2023/resolve/main/raw/meta_categories/meta_Electronics.jsonl",
+    "https://huggingface.co/datasets/McAuley-Lab/Amazon-Reviews-2023/resolve/main/raw/meta_categories/meta_Cell_Phones_and_Accessories.jsonl"
+]
+REVIEW_URLS = [
+    "https://huggingface.co/datasets/McAuley-Lab/Amazon-Reviews-2023/resolve/main/raw/review_categories/Electronics.jsonl",
+    "https://huggingface.co/datasets/McAuley-Lab/Amazon-Reviews-2023/resolve/main/raw/review_categories/Cell_Phones_and_Accessories.jsonl"
+]
 
 def iter_jsonl(url):
     with requests.get(url, stream=True, timeout=30) as r:
@@ -23,28 +29,34 @@ def main():
     product_review_counts = {}
     review_pool = []
 
-    # We want ~34k reviews
-    for rev in iter_jsonl(REVIEW_URL):
-        pid = rev.get('parent_asin', rev.get('asin', ''))
-        if not pid:
-            continue
-        if len(product_review_counts) < 30000 or pid in product_review_counts:
-            if pid not in product_review_counts:
-                product_review_counts[pid] = 0
-            if product_review_counts[pid] < 15:
-                review_pool.append({
-                    'review_id': f"MCA_REV_{len(review_pool)+1:07d}",
-                    'reviewer_id': rev.get('user_id', 'unknown'),
-                    'product_id': f"MCA_{pid}",
-                    'review_title': rev.get('title', ''),
-                    'review_text': rev.get('text', ''),
-                    'rating': rev.get('rating', 0.0),
-                    'verified_purchase': rev.get('verified_purchase', False)
-                })
-                product_review_counts[pid] += 1
+    # We want ~34k reviews total
+    for r_url in REVIEW_URLS:
+        print(f"Fetching reviews from {r_url}...")
+        url_count = 0
+        for rev in iter_jsonl(r_url):
+            pid = rev.get('parent_asin', rev.get('asin', ''))
+            if not pid:
+                continue
+            if len(product_review_counts) < 30000 or pid in product_review_counts:
+                if pid not in product_review_counts:
+                    product_review_counts[pid] = 0
+                if product_review_counts[pid] < 15:
+                    review_pool.append({
+                        'review_id': f"MCA_REV_{len(review_pool)+1:07d}",
+                        'reviewer_id': rev.get('user_id', 'unknown'),
+                        'product_id': f"MCA_{pid}",
+                        'review_title': rev.get('title', ''),
+                        'review_text': rev.get('text', ''),
+                        'rating': rev.get('rating', 0.0),
+                        'verified_purchase': rev.get('verified_purchase', False)
+                    })
+                    product_review_counts[pid] += 1
+                    url_count += 1
 
-            if len(review_pool) >= 50000:
-                break
+                if url_count >= 25000:
+                    break
+        if len(review_pool) >= 50000:
+            break
 
     valid_pids = set(pid for pid in product_review_counts if product_review_counts[pid] > 0)
     print(f"Collected {len(review_pool)} reviews for {len(valid_pids)} products. Now finding their metadata...")
@@ -52,53 +64,59 @@ def main():
     product_pool = []
     pids_found = set()
 
-    for prod in iter_jsonl(META_URL):
-        pid = prod.get('parent_asin', prod.get('asin', ''))
-        if pid in valid_pids:
-            price_str = str(prod.get('price', ''))
-            price_usd = 0.0
-            try:
-                clean_price = price_str.replace('$', '').replace(',', '').strip()
-                if clean_price:
-                    price_usd = float(clean_price)
-            except ValueError:
-                pass
+    for m_url in META_URLS:
+        print(f"Fetching metadata from {m_url}...")
+        url_count = 0
+        for prod in iter_jsonl(m_url):
+            pid = prod.get('parent_asin', prod.get('asin', ''))
+            if pid in valid_pids:
+                price_str = str(prod.get('price', ''))
+                price_usd = 0.0
+                try:
+                    clean_price = price_str.replace('$', '').replace(',', '').strip()
+                    if clean_price:
+                        price_usd = float(clean_price)
+                except ValueError:
+                    pass
 
-            price_inr = round(price_usd * USD_TO_INR) if price_usd > 0 else None
+                price_inr = round(price_usd * USD_TO_INR) if price_usd > 0 else None
 
-            cats = prod.get('categories', [])
-            cat_tree = " >> ".join(cats) if cats else ""
+                cats = prod.get('categories', [])
+                cat_tree = " >> ".join(cats) if cats else ""
 
-            features = prod.get('features', [])
-            spec_text = " | ".join(features) if features else ""
+                features = prod.get('features', [])
+                spec_text = " | ".join(features) if features else ""
 
-            desc = prod.get('description', [])
-            desc_text = " ".join(desc) if desc else ""
+                desc = prod.get('description', [])
+                desc_text = " ".join(desc) if desc else ""
 
-            images = prod.get('images', [])
-            image_urls = []
-            if isinstance(images, list):
-                for img in images:
-                    if isinstance(img, dict) and 'large' in img:
-                        image_urls.append(img['large'])
-                    elif isinstance(img, str):
-                        image_urls.append(img)
+                images = prod.get('images', [])
+                image_urls = []
+                if isinstance(images, list):
+                    for img in images:
+                        if isinstance(img, dict) and 'large' in img:
+                            image_urls.append(img['large'])
+                        elif isinstance(img, str):
+                            image_urls.append(img)
 
-            product_pool.append({
-                'product_id': f"MCA_{pid}",
-                'product_name': prod.get('title', ''),
-                'category_tree': cat_tree,
-                'brand': prod.get('brand', ''),
-                'retail_price_inr': price_inr,
-                'discounted_price_inr': price_inr,
-                'specification_text': spec_text,
-                'description': desc_text,
-                'image_urls': json.dumps(image_urls)
-            })
-            pids_found.add(pid)
+                product_pool.append({
+                    'product_id': f"MCA_{pid}",
+                    'product_name': prod.get('title', ''),
+                    'category_tree': cat_tree,
+                    'brand': prod.get('brand', ''),
+                    'retail_price_inr': price_inr,
+                    'discounted_price_inr': price_inr,
+                    'specification_text': spec_text,
+                    'description': desc_text,
+                    'image_urls': "|".join(image_urls) if image_urls else ""
+                })
+                pids_found.add(pid)
+                url_count += 1
 
-            if len(product_pool) >= 20000:
-                break
+                if url_count >= 10000:
+                    break
+        if len(product_pool) >= 20000:
+            break
 
     print(f"Found {len(product_pool)} products in metadata.")
 

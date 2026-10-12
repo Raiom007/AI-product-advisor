@@ -55,6 +55,9 @@ ingest:
 run:
 	$(VENV_PYTHON) -m streamlit run src/advisor/ui/app.py
 
+run-api:
+	$(VENV_PYTHON) -m uvicorn advisor.api:app --reload --port 8000
+
 eval:
 	$(VENV_PYTHON) -m advisor.eval.run_eval --mode replay --suite e2e
 	$(VENV_PYTHON) -m advisor.eval.report

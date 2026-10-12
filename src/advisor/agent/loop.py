@@ -55,6 +55,9 @@ def run_loop(state: AgentState, context: dict) -> AgentState:
             )
             if result.error:
                 output_summary += f", error={result.error}"
+            # WHY: Debug print so we can trace failures in uvicorn logs without a full profiler
+            data_len = len(result.data) if isinstance(result.data, (list, dict)) else 'n/a'
+            print(f"DEBUG LOOP step={tool_name} ok={result.ok} data_len={data_len} error={result.error!r}")
         except Exception as e:
             latency_ms = int((time.monotonic() - t0) * 1000)
             span_error = str(e)

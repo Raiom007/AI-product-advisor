@@ -13,7 +13,7 @@ def get_db_path() -> str:
 
 def _load_flags(db_path: str, product_id: str = "") -> list[dict]:
     query = """
-        SELECT r.product_id, f.review_id, f.score, f.signals, f.reasons, f.action 
+        SELECT r.product_id, f.review_id, f.score, f.signals, f.reasons, f.action, r.text, r.rating, r.date
         FROM review_flags f
         JOIN reviews r ON f.review_id = r.review_id
     """
@@ -66,6 +66,9 @@ def render():
         badge = f":{color}[**{action.upper()}**]"
 
         with st.expander(f"{badge} {f.get('product_id')} — Review `{f.get('review_id')}` (Score: {f.get('score', 0):.2f})"):
+            if "text" in f:
+                st.info(f"⭐ {f.get('rating', '?')} | 📅 {f.get('date', '?')}\n\n\"{f['text']}\"")
+                
             st.markdown("**Reasons:**")
             reasons = f.get("reasons")
             if reasons:

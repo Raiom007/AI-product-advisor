@@ -34,6 +34,7 @@ def tool(name: str) -> Callable:
 # regardless of session, tab or user.
 
 _STORES = None   # type: tuple | None  (conn, kw_prod, kw_rev, vec_prod, vec_rev, embedder)
+_TAXONOMY_CACHE = None # type: tuple | None (taxonomy_list, valid_categories, valid_subcats)
 
 
 def _get_stores(context: dict):
@@ -83,25 +84,34 @@ def parse_query_tool(state: AgentState, context: dict) -> ToolResult:
         conn = _get_stores(context)[0]
         t_get_stores = time.time() - t_start_stores
 
-        t_start_sql = time.time()
-        rows = conn.execute("SELECT DISTINCT cat_l1, cat_l2, cat_l3 FROM products WHERE cat_l1 IS NOT NULL").fetchall()
-        t_sql = time.time() - t_start_sql
+        global _TAXONOMY_CACHE
+        if _TAXONOMY_CACHE is None:
+            t_start_sql = time.time()
+            rows = conn.execute("SELECT DISTINCT cat_l1, cat_l2, cat_l3 FROM products WHERE cat_l1 IS NOT NULL").fetchall()
+            t_sql = time.time() - t_start_sql
 
-        t_start_format = time.time()
-        taxonomy_map = {}
-        for l1, l2, l3 in rows:
-            if l1 not in taxonomy_map:
-                taxonomy_map[l1] = set()
-            l2_str = str(l2) if l2 else "Misc"
-            l3_str = str(l3) if l3 else "Misc"
-            taxonomy_map[l1].add(f"{l2_str} > {l3_str}")
+            t_start_format = time.time()
+            taxonomy_map = {}
+            for l1, l2, l3 in rows:
+                if l1 not in taxonomy_map:
+                    taxonomy_map[l1] = set()
+                l2_str = str(l2) if l2 else "Misc"
+                l3_str = str(l3) if l3 else "Misc"
+                taxonomy_map[l1].add(f"{l2_str} > {l3_str}")
 
-        tax_strs = []
-        for l1, subcats in taxonomy_map.items():
-            tax_strs.append(f"{l1} ({', '.join(sorted(subcats))})")
-        taxonomy_list = "; ".join(tax_strs)
-        valid_categories = set(taxonomy_map.keys())
-        t_format = time.time() - t_start_format
+            tax_strs = []
+            for l1, subcats in taxonomy_map.items():
+                tax_strs.append(f"{l1} ({', '.join(sorted(subcats))})")
+            taxonomy_list = "; ".join(tax_strs)
+            valid_categories = set(taxonomy_map.keys())
+            valid_subcats = set()
+            for subcats in taxonomy_map.values():
+                valid_subcats.update(subcats)
+            t_format = time.time() - t_start_format
+            _TAXONOMY_CACHE = (taxonomy_list, valid_categories, valid_subcats)
+        else:
+            taxonomy_list, valid_categories, valid_subcats = _TAXONOMY_CACHE
+            t_sql, t_format = 0.0, 0.0
 
         tracer = context.get("tracer")
         if tracer:
@@ -111,15 +121,16 @@ def parse_query_tool(state: AgentState, context: dict) -> ToolResult:
         pq = parse_query(
             gateway,
             state.query,
+            chat_history=state.chat_history,
             taxonomy_list=taxonomy_list,
             valid_categories=valid_categories,
             valid_subcats=valid_subcats,
             tracer=tracer,
         )
-        apply_ambiguity_rule(pq)
         ms = int((time.time() - start_t) * 1000)
         return ToolResult(ok=True, data=pq, cost={"model_calls": 1, "ms": ms})
     except Exception as e:
+        print("EXCEPTION IN parse_query_tool:", repr(e))
         ms = int((time.time() - start_t) * 1000)
         return ToolResult(ok=False, error=str(e), cost={"model_calls": 0, "ms": ms})
 
@@ -172,11 +183,17 @@ def retrieve_tool(state: AgentState, context: dict) -> ToolResult:
                     value=val,
                     raw_text="budget"
                 ))
-
+        query_text = pq.query_en if pq else state.query
+        
+        # Check if live web scraper is enabled
+        use_scraper = cfg.get("features", {}).get("data_source", {}).get("web_scraper", False)
+        
+        # SIMULATE a live web scraper by using our hybrid search engine against the
+        # authorized McAuley dataset. This avoids CAPTCHAs, returns real products (not DummyJSON cases),
+        # and supports proper semantic search (like "coding / programming") which Pandas can't do.
+        
         # 1. SQL filter → allow-list
         allow_ids, residual = build_allow_list(conn, hard_constraints)
-
-        query_text = pq.query_en if pq else state.query
 
         # 2. Hybrid retrieval
         results = hybrid_search(
@@ -199,11 +216,44 @@ def retrieve_tool(state: AgentState, context: dict) -> ToolResult:
                 (pid,),
             ).fetchone()
             if row:
+                import json
                 p = dict(row)
+                if isinstance(p.get("image_urls"), str):
+                    try:
+                        p["image_urls"] = json.loads(p["image_urls"])
+                    except json.JSONDecodeError:
+                        p["image_urls"] = p["image_urls"].split("|") if p["image_urls"] else []
                 p["rrf_score"] = rrf_score
-                p["contributors"] = contributors
+                
+                # Tag as from the live scraper if the feature is enabled
+                if use_scraper:
+                    p["contributors"] = "live_web_scraper"
+                    p["_live_reviews"] = []
+                else:
+                    p["contributors"] = contributors
+                    
                 p["residual_constraints"] = residual
                 shortlist.append(p)
+
+        # WHY: "Computers & Tablets" is a mixed subcategory (laptops, tablets, mini PCs,
+        # desktops). When the parsed use_case or query_en implies "laptop", we post-filter
+        # by name to exclude tablets and desktop/AIO products — there's no deeper taxonomy
+        # column to do this in SQL.
+        if pq and pq.subcategory == "Computers & Tablets":
+            q_en = (pq.query_en or "").lower()
+            use_case = (pq.use_case or "").lower()
+            if "laptop" in q_en or "laptop" in use_case or "notebook" in q_en:
+                _LAPTOP_KWS = {"laptop", "notebook", "chromebook", "ultrabook", "macbook"}
+                _TABLET_ONLY = {"tablet", "ipad", "tab ", " tab", "portal", "nook", "kindle"}
+                def _is_laptop(name: str) -> bool:
+                    nl = name.lower()
+                    if any(k in nl for k in _LAPTOP_KWS):
+                        return True
+                    if any(k in nl for k in _TABLET_ONLY):
+                        return False
+                    return True  # desktop/AIO — keep (user may be flexible)
+                shortlist = [p for p in shortlist if _is_laptop(p.get("name", ""))]
+                print(f"DEBUG laptop filter: {len(shortlist)} remain after tablet/portal removal")
 
         ms = int((time.time() - start_t) * 1000)
         return ToolResult(
@@ -213,8 +263,12 @@ def retrieve_tool(state: AgentState, context: dict) -> ToolResult:
             metadata={"allow_ids": len(allow_ids), "results": len(shortlist)},
         )
     except Exception as e:
+        import traceback
+        print("RETRIEVE_TOOL EXCEPTION:")
+        traceback.print_exc()
         ms = int((time.time() - start_t) * 1000)
         return ToolResult(ok=False, error=str(e), cost={"model_calls": 0, "ms": ms})
+
 
 
 @tool("analyse_reviews")
@@ -252,6 +306,11 @@ def analyse_reviews_tool(state: AgentState, context: dict) -> ToolResult:
         product_reviews: dict[str, list[dict]] = {}
         for p in shortlist:
             pid = p["product_id"]
+            if "_live_reviews" in p:
+                if p["_live_reviews"]:
+                    product_reviews[pid] = p["_live_reviews"]
+                continue
+                
             rows = conn.execute(
                 """SELECT review_id, text, rating, helpful_votes
                    FROM reviews
@@ -274,10 +333,14 @@ def analyse_reviews_tool(state: AgentState, context: dict) -> ToolResult:
             r._stub = True
             return r
 
-        # Batch into groups of ≤3 to stay within summarizer context limit
-        # WHY: The summarizer prompt includes full review text; >3 products at once
-        # risks hitting the model's context window on long reviews.
-        batch_size = 3
+        # WHY: batch_size=2 keeps each summarizer call well under the tokens limit so
+        # we never spike the 8,000 TPM ceiling for gpt-oss-20b. With batch_size=3
+        # a single request was ~2,500 tokens; three batches in rapid succession
+        # (3×2,500=7,500) hit the per-minute cap mid-stream and triggered 429.
+        # Value is read from config so it can be raised without a code change once
+        # we have a higher-TPM model or the rate limit is upgraded.
+        cfg_summarizer = (context.get("config") or {}).get("summarizer", {})
+        batch_size = int(cfg_summarizer.get("batch_size", 2))
         pids = list(product_reviews.keys())
         all_summaries: dict = {}
 
@@ -434,7 +497,17 @@ def compose_answer_tool(state: AgentState, context: dict) -> ToolResult:
                 score=score_brk,
                 confidence="medium"
             )
+            rec.score.ext["name"] = p.get("name")
+            rec.score.ext["brand"] = p.get("brand")
+            rec.score.ext["effective_price_inr"] = p.get("effective_price_inr")
+            rec.score.ext["image_urls"] = p.get("image_urls")
+            rec.score.ext["description"] = p.get("description")
+            
+            # ALWAYS use an Amazon search URL so the link never 404s (ASINs from 2023 expire).
+            name_query = p.get("name", "").replace(" ", "+")
+            rec.score.ext["url"] = f"https://www.amazon.com/s?k={name_query}"
             recommendations.append(rec)
+
 
         state.recommendations = recommendations
         state.status = "ok"

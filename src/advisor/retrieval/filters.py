@@ -120,13 +120,19 @@ def _category_sql(c: Constraint) -> tuple[str, list[Any]]:
     val = str(c.value).strip()
     subcat = str(c.ext.get("subcategory", "")).strip() if c.ext.get("subcategory") else None
 
-    # Always use the most specific term (subcat if available) for a broad LIKE search across all levels
-    search_term = subcat if subcat else val
     if c.op == "eq":
-        return (
-            "(LOWER(cat_l1) LIKE LOWER(?) OR LOWER(cat_l2) LIKE LOWER(?) OR LOWER(cat_l3) LIKE LOWER(?))",
-            [f"%{search_term}%", f"%{search_term}%", f"%{search_term}%"],
-        )
+        if subcat:
+            # WHY: exact case-insensitive match on l2/l3 prevents the top-level l1 string
+            # ("Cell Phones & Accessories") from falsely satisfying a subcat search for "Cell Phones"
+            return (
+                "(LOWER(cat_l2) = LOWER(?) OR LOWER(cat_l3) = LOWER(?))",
+                [subcat, subcat],
+            )
+        else:
+            return (
+                "(LOWER(cat_l1) LIKE LOWER(?) OR LOWER(cat_l2) LIKE LOWER(?) OR LOWER(cat_l3) LIKE LOWER(?))",
+                [f"%{val}%", f"%{val}%", f"%{val}%"],
+            )
     return "", []
 
 

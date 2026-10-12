@@ -111,9 +111,27 @@ def render():
             for s in budget_spans:
                 st.json(json.loads(s.get("output_summary", "{}")))
 
-    # Timeline — grouped by type
-    st.subheader("Timeline")
-    type_order = ["plan", "tool_call", "verify", "decision", "model_call", "budget", "degrade"]
+    # Tool and Model Calls Table
+    st.subheader("Tool & Model Calls")
+    table_data = []
+    for s in spans:
+        stype = s.get("type")
+        if stype in ("tool_call", "model_call"):
+            fallback = "Yes" if s.get("fallback") else "No"
+            outcome = "Error" if s.get("error") else ("Cached" if s.get("cache_hit") else "Success")
+            table_data.append({
+                "Type": stype,
+                "Name": s.get("name", ""),
+                "Latency (ms)": s.get("latency_ms", ""),
+                "Model": s.get("model", ""),
+                "Outcome": outcome,
+                "Fallback": fallback
+            })
+    if table_data:
+        st.table(table_data)
+
+    st.subheader("Timeline (Other Spans)")
+    type_order = ["plan", "verify", "decision", "budget", "degrade"]
     for group in type_order:
         group_spans = [s for s in spans if s.get("type") == group]
         if not group_spans:

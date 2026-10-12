@@ -4,19 +4,29 @@ try:
 except ImportError:
     Groq = None
 
+import os
+
 from advisor.llm.base import LLMProvider, ProviderResponse, T
 from advisor.llm.capabilities import LLMCapabilities
 
 
 class GroqProvider(LLMProvider):
     def __init__(self):
+        self._init_error = None
         if Groq is None:
             self._client = None
+            self._init_error = "groq SDK not installed"
         else:
-            try:
-                self._client = Groq(timeout=15.0)
-            except Exception:
+            api_key = os.environ.get("GROQ_API_KEY")
+            if not api_key:
                 self._client = None
+                self._init_error = "GROQ_API_KEY environment variable not set"
+            else:
+                try:
+                    self._client = Groq(api_key=api_key, timeout=15.0)
+                except Exception as e:
+                    self._client = None
+                    self._init_error = f"Failed to initialize Groq Client: {e}"
 
     def capabilities(self, model: str) -> LLMCapabilities:
         # Vision is supported on Llama 3.2 vision models
@@ -45,7 +55,7 @@ class GroqProvider(LLMProvider):
         max_tokens: int | None = None
     ) -> ProviderResponse:
         if not self._client:
-            raise RuntimeError("groq SDK not installed")
+            raise RuntimeError(self._init_error or "groq Client not initialized")
 
         messages = self._build_messages(system, prompt)
 
@@ -74,7 +84,7 @@ class GroqProvider(LLMProvider):
         temperature: float = 0.0
     ) -> ProviderResponse:
         if not self._client:
-            raise RuntimeError("groq SDK not installed")
+            raise RuntimeError(self._init_error or "groq Client not initialized")
 
         # Add a hint to the prompt for JSON mode
         system = (system or "") + "\n\nYou must output ONLY valid JSON adhering to the provided schema."

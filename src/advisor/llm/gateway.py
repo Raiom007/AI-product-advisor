@@ -31,12 +31,21 @@ class Gateway:
         self.cache_dir = cache_dir
         self.resolved_roles = {}
 
-    def self_check(self) -> None:
-        """Resolve each role to the first candidate that exists and has required capabilities."""
-        available_models = {}
-        # Try to list models to see what's actually alive (mocked for simplicity, in reality we'd call SDK list methods)
-        # For this MVP, we assume all providers are available unless they fail initialization
+    def self_check(self, live_probe: bool = False) -> None:
+        """Resolve each role to the first candidate that satisfies capability needs.
 
+        Args:
+            live_probe: When False (default, used on every app boot), resolution
+                is based on capability flags only — no network calls, negligible
+                latency.  When True (used by `make probe` exclusively), fires a
+                real 1-token API call per resolved role and logs whether the
+                endpoint is actually reachable.
+                WHY: a live call on every boot would add latency and consume quota
+                on every Streamlit restart. The diagnostic showed self_check
+                reported PASS for gemini/gemini-3.5-flash even though the endpoint
+                was 100% unreachable (SSL block). Opt-in probing makes this gap
+                visible without penalising normal startup.
+        """
         for role, config in self.models_config.get("roles", {}).items():
             resolved = None
             for cand in config.get("candidates", []):
@@ -48,18 +57,19 @@ class Gateway:
                 if not provider:
                     continue
 
-                # Cross-reference with configs/limits.yaml (the probe output)
+                # Cross-reference with configs/limits.yaml
                 if provider_name != "fake" and model_id not in self.rate_limiter.buckets:
-                    logger.debug(f"Skipping {model_id}: not present in probed limits config.")
+                    logger.debug(f"Skipping {model_id}: not present in limits config.")
                     continue
 
                 caps = provider.capabilities(model_id)
 
-                # Check needs
                 missing = False
                 for need in needs:
-                    if need == "structured_output" and not caps.structured_output: missing = True
-                    if need == "vision" and not caps.vision: missing = True
+                    if need == "structured_output" and not caps.structured_output:
+                        missing = True
+                    if need == "vision" and not caps.vision:
+                        missing = True
 
                 if not missing:
                     resolved = cand
@@ -68,10 +78,27 @@ class Gateway:
             if resolved:
                 self.resolved_roles[role] = resolved
                 logger.info(f"Role '{role}' resolved to {resolved['provider']}/{resolved['model']}")
+
+                if live_probe and resolved["provider"] != "fake":
+                    # WHY: opt-in only — fires a real 1-token call to prove the
+                    # network path is alive. Never runs on normal app boot.
+                    try:
+                        provider = self.providers[resolved["provider"]]
+                        provider.complete(
+                            model=resolved["model"],
+                            system=None,
+                            prompt="Say: OK",
+                            max_tokens=1,
+                        )
+                        logger.info(f"  [live_probe] Role '{role}' → {resolved['model']}: REACHABLE")
+                    except Exception as e:
+                        logger.warning(
+                            f"  [live_probe] Role '{role}' → {resolved['model']}: UNREACHABLE — {e}"
+                        )
             else:
                 logger.error(f"Role '{role}' has no live candidate satisfying needs!")
-                # Fail loudly per SOW
                 raise RuntimeError(f"Startup check failed: no candidate for role '{role}'")
+
 
     def _get_cache_key(self, model: str, role: str, prompt: str, schema: type[BaseModel] | None, params: dict) -> str:
         data = {

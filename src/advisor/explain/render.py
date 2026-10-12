@@ -75,9 +75,12 @@ def _template_paragraph(evidence_pool: list[dict]) -> str:
     spec_lines = [
         ev["text"] for ev in evidence_pool if ev.get("kind") == "spec_line"
     ][:3]
+    # WHY: Label removed from user-facing text; degradation is already tracked
+    # in state.degraded and surfaced via the UI degradation pill — no need
+    # to pollute the product paragraph shown to the user.
     if spec_lines:
-        return "[Basic explanation mode] Key specs: " + "; ".join(spec_lines) + "."
-    return "[Basic explanation mode] No detailed specs available."
+        return "Key specs: " + "; ".join(spec_lines) + "."
+    return "No detailed specs available."
 
 
 # ── Template fallback for full Recommendation ────────────────────────────────

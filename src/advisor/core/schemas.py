@@ -53,6 +53,7 @@ class ParsedQuery(BaseModel):
     soft: list[str] = Field(default_factory=list)
     needs_clarification: bool = False
     clarifying_question: str | None = None    # exactly one question
+    suggested_answers: list[str] = Field(default_factory=list)
 
 
 # ---------------------------------------------------------------------------
@@ -88,8 +89,8 @@ class ReviewSummary(BaseModel):
     praises: list[dict]       # {"point": str, "review_ids": [str]}
     complaints: list[dict]
     use_case_fit: dict        # {"verdict": "good|mixed|poor|unknown", "review_ids": [...]}
-    n_reviews_used: int
-    n_flagged_excluded: int
+    n_reviews_used: int = 0
+    n_flagged_excluded: int = 0
 
 class ReviewSummaryBatch(BaseModel):
     summaries: list[ReviewSummary]
@@ -136,6 +137,7 @@ class Recommendation(BaseModel):
 class AdvisorResponse(BaseModel):
     status: Literal["ok", "needs_clarification", "abstained", "degraded_ok"]
     message: str | None = None               # clarifying question / abstention reason
+    suggested_answers: list[str] = Field(default_factory=list)  # clickable reply options
     recommendations: list[Recommendation] = Field(default_factory=list)
     degraded: list[str] = Field(default_factory=list)   # ["vision_skipped:rate_limit"]
     trace_id: str

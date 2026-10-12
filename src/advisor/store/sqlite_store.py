@@ -328,7 +328,8 @@ class SQLiteKeywordIndex:
 
         # SQLite FTS5 query syntax can be strict. A naive approach is to use standard MATCH.
         # Clean query by removing quotes/special characters that break FTS5
-        safe_query = " ".join(w for w in query.replace('"', ' ').split() if w.isalnum())
+        words = [w for w in query.replace('"', ' ').split() if w.isalnum()]
+        safe_query = " AND ".join(words)
         if not safe_query:
             return []
 

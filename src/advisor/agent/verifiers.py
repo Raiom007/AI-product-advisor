@@ -18,11 +18,12 @@ def verifier(name: str) -> Callable:
 @verifier("parse_ok")
 def verify_parse_ok(state: AgentState, result: ToolResult) -> VerifierResult:
     """Check if parse needs clarification."""
+    # WHY: We check state.step to ensure this only fires right after parse_query,
+    # not during any other tool step. The old "asked once" guard (attempts >= 1)
+    # was silently swallowing clarification on every turn except the very first
+    # in a session — removed it so each new AgentState gets a clean check.
     if state.step >= 0 and state.plan[state.step].tool == "parse_query":
         if result.ok and result.data and getattr(result.data, "needs_clarification", False):
-            if state.attempts.get("parse_ok", 0) >= 1:
-                return VerifierResult("continue") # Already asked once?
-            state.attempts["parse_ok"] = state.attempts.get("parse_ok", 0) + 1
             return VerifierResult("ask_user", "Query is ambiguous")
     return VerifierResult("continue")
 

@@ -13,9 +13,9 @@ weights:
   visual: 0.10             # V: absent if vision skipped → renormalise
 
 thresholds:
-  shortlist_size: 8        # default candidates after retrieval
-  shortlist_min: 5
-  shortlist_max: 10
+  shortlist_size: 4        # default candidates after retrieval
+  shortlist_min: 3
+  shortlist_max: 5
   vision_top_n: 3          # run vision only on top-N after pre-rank
   images_per_product: 3    # max images per vision call
 

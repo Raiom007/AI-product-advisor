@@ -58,29 +58,34 @@ class RateLimiter:
                 self.rpd_usage[model] = 0
             self.reset_time = now
 
-    def wait_if_needed(self, model: str, estimated_tokens: int = 1000) -> None:
-        """Blocks until there is enough quota to proceed. Raises Exception if daily quota exceeded."""
+    def wait_if_needed(self, model: str, estimated_tokens: int = 1000, max_wait: float = 1.0) -> None:
+        """Blocks briefly if under the per-minute rate limit, then proceeds.
+        
+        WHY: Free-tier daily quotas cannot recover within a single request.
+        Sleeping for the full refill time (minutes) wastes wall-clock time and
+        makes the user think the app is broken. We cap the wait at `max_wait`
+        seconds (default 1s) and raise so the gateway falls back immediately.
+        """
         if model not in self.buckets:
             return # No limits configured
 
         self._check_daily_reset()
 
-        # In a real app we'd also check RPD from the config, but we'll assume the
-        # config is just passed in via limits_config and we can check it if present.
-
         req_bucket = self.buckets[model]["requests"]
         tok_bucket = self.buckets[model]["tokens"]
 
-        while True:
-            wait_req = req_bucket.consume(1.0)
-            wait_tok = tok_bucket.consume(float(estimated_tokens))
+        wait_req = req_bucket.consume(1.0)
+        wait_tok = tok_bucket.consume(float(estimated_tokens))
+        wait_time = max(wait_req, wait_tok)
 
-            wait_time = max(wait_req, wait_tok)
-            if wait_time <= 0:
-                break
+        if wait_time <= 0:
+            return
 
-            logger.info(f"Rate limited on {model}, sleeping {wait_time:.2f}s")
-            time.sleep(wait_time)
+        if wait_time > max_wait:
+            raise Exception(f"Rate limit exceeded for {model}: would need to wait {wait_time:.1f}s")
+
+        logger.info(f"Rate limited on {model}, sleeping {wait_time:.2f}s")
+        time.sleep(wait_time)
 
     def record_usage(self, model: str, actual_tokens: int) -> None:
         """Records the actual tokens used to adjust the bucket (and RPD)."""

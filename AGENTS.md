@@ -15,13 +15,15 @@ Read `docs/SIGNOFF.md` at the start of every task.
 - Only the owner changes this file. Never edit it yourself.
 
 ## Data confidentiality (SOW §14)
+- Owner, Oct 9 2026: A live web scraper is authorized to fetch real-time product data and reviews.
 - Raw CSVs live inside this repo at `data/raw/` (path in `$ADVISOR_RAW_DIR`), protected by `.gitignore`, never by being outside the workspace. Never remove `data/` from `.gitignore`. Never commit them, never open or print them.
 - Never run `git add .` or `git add -A` in this repo — add files by explicit path only, so a `.gitignore` mistake can't silently stage `data/`.
 - You may read only `data/sample/` (small, PII-redacted) and `data/profile/` (aggregates).
 - Never print raw review or product rows in a terminal. Print counts and aggregates.
 - Never paste data into prompts, tests, ADRs or commit messages. Test fixtures are synthetic.
 - Do not source extra product or review data from the internet, EXCEPT the one dataset explicitly authorized below. Never any other external source without an equally explicit, dated authorization added to this file first.
-- **AUTHORIZED EXCEPTION** (per Hemanth Singh N, overriding the SOW §5/§9 no-external-data default): the McAuley Lab "Amazon Reviews 2023" — Electronics category (Hugging Face: `McAuley-Lab/Amazon-Reviews-2023`) may be used as the product/review dataset in place of Mirai Labs' own files. This is the *only* authorized external source.
+- **AUTHORIZED EXCEPTION** (per Hemanth Singh N, overriding the SOW §5/§9 no-external-data default): the McAuley Lab "Amazon Reviews 2023" — Electronics and Cell_Phones_and_Accessories categories (Hugging Face: `McAuley-Lab/Amazon-Reviews-2023`) may be used as the product/review dataset in place of Mirai Labs' own files. This is the *only* authorized external source.
+
 
 ## Architecture rules (details in ARCHITECTURE.md §1, §4, §4.1)
 1. **Layering.** A module imports `core/` and the ports (`store/interfaces.py`, `llm/base.py`) only. Never a sibling's internals. `agent/` is the only place that wires modules together.

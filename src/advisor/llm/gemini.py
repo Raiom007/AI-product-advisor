@@ -13,18 +13,24 @@ from advisor.llm.capabilities import LLMCapabilities
 
 class GeminiProvider(LLMProvider):
     def __init__(self):
+        self._init_error = None
         if genai is None:
             self._client = None
+            self._init_error = "google-genai SDK not installed"
         else:
-            try:
-                self._client = genai.Client(
-                    api_key=os.environ.get("GEMINI_API_KEY"),
-                    http_options={"timeout": 15.0}
-                )
-            except Exception:
-                import traceback
-                traceback.print_exc()
+            api_key = os.environ.get("GEMINI_API_KEY")
+            if not api_key:
                 self._client = None
+                self._init_error = "GEMINI_API_KEY environment variable not set"
+            else:
+                try:
+                    self._client = genai.Client(
+                        api_key=api_key,
+                        http_options={"timeout": 15.0}
+                    )
+                except Exception as e:
+                    self._client = None
+                    self._init_error = f"Failed to initialize google-genai Client: {e}"
 
     def capabilities(self, model: str) -> LLMCapabilities:
         # According to standard Gemini models
@@ -52,7 +58,7 @@ class GeminiProvider(LLMProvider):
         max_tokens: int | None = None
     ) -> ProviderResponse:
         if not self._client:
-            raise RuntimeError("google-genai SDK not installed")
+            raise RuntimeError(self._init_error or "google-genai Client not initialized")
 
         config = types.GenerateContentConfig(
             temperature=temperature,
@@ -85,7 +91,7 @@ class GeminiProvider(LLMProvider):
         temperature: float = 0.0
     ) -> ProviderResponse:
         if not self._client:
-            raise RuntimeError("google-genai SDK not installed")
+            raise RuntimeError(self._init_error or "google-genai Client not initialized")
 
         schema_dict = schema.model_json_schema()
 

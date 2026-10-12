@@ -42,3 +42,6 @@ eval_suites:
   vision: true
   guardrail: true
   e2e: true
+
+data_source:
+  web_scraper: true

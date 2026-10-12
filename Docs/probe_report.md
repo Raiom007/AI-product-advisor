@@ -1,0 +1,67 @@
+# Model Probe Report
+
+Generated at: 2026-10-12 11:12:35
+
+## Gemini
+burst_test: 5/5 successful
+visible_models:
+- models/gemini-2.5-flash
+- models/gemini-2.5-pro
+- models/gemini-2.5-flash-preview-tts
+- models/gemini-2.5-pro-preview-tts
+- models/gemini-flash-latest
+- models/gemini-flash-lite-latest
+- models/gemini-pro-latest
+- models/gemini-2.5-flash-lite
+- models/gemini-2.5-flash-image
+- models/gemini-3-flash-preview
+- models/gemini-3.1-pro-preview
+- models/gemini-3.1-pro-preview-customtools
+- models/gemini-3.1-flash-lite-preview
+- models/gemini-3.1-flash-lite
+- models/gemini-3-pro-image-preview
+- models/gemini-3-pro-image
+- models/gemini-3.1-flash-image-preview
+- models/gemini-3.1-flash-image
+- models/gemini-3.1-flash-lite-image
+- models/gemini-nano-banana-2.1
+- models/gemini-3.5-flash
+- models/gemini-3.5-flash-lite
+- models/gemini-omni-flash-preview
+- models/gemini-omni-1.1-flash
+- models/gemini-3.5-transcribe
+- models/gemini-3.6-flash
+- models/gemini-3.7-flash
+- models/gemini-3.8-flash
+- models/gemini-3.1-flash-tts-preview
+- models/gemini-3.8-flash-tts
+- models/gemini-3.8-flash-lite-tts
+- models/gemini-robotics-er-2-preview
+- models/gemini-2.5-computer-use-preview-10-2025
+- models/gemini-embedding-001
+- models/gemini-embedding-2-preview
+- models/gemini-embedding-2
+- models/gemini-3.5-transcribe-live
+- models/gemini-2.5-flash-native-audio-latest
+- models/gemini-2.5-flash-native-audio-preview-09-2025
+- models/gemini-2.5-flash-native-audio-preview-12-2025
+- models/gemini-3.1-flash-live-preview
+- models/gemini-3.8-live
+- models/gemini-3.8-live-extended-thinking
+- models/gemini-robotics-er-2-streaming-preview
+- models/gemini-3.5-live-translate-preview
+
+## Groq
+burst_test: 5/5 successful
+visible_models:
+- canopylabs/orpheus-v1-english
+- whisper-large-v3
+- openai/gpt-oss-safeguard-20b
+- meta-llama/llama-prompt-guard-2-86m
+- meta-llama/llama-prompt-guard-2-22m
+- allam-2-7b
+- openai/gpt-oss-120b
+- whisper-large-v3-turbo
+- canopylabs/orpheus-arabic-saudi
+- qwen/qwen3.8-27b
+- openai/gpt-oss-20b

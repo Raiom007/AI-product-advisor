@@ -5,7 +5,7 @@ import random
 from pathlib import Path
 
 from advisor.core.registries import eval_suites
-
+import advisor.eval.suites
 
 def get_hash(content: str) -> str:
     return hashlib.sha256(content.encode()).hexdigest()[:8]
@@ -47,12 +47,24 @@ def main():
         print(f"Error running suite: {e}")
         raise
 
+    # Compute hashes
+    configs_content = ""
+    for cfg in Path("configs").glob("*.yaml"):
+        configs_content += cfg.read_text()
+    config_hash = get_hash(configs_content)
+
+    prompts_content = ""
+    for pr in Path("prompts").glob("*.md"):
+        prompts_content += pr.read_text()
+    prompt_hashes = get_hash(prompts_content)
+
     report = {
         "header": {
             "mode": args.mode,
             "suite": args.suite,
             "data_hash": get_hash(json.dumps(queries)),
-            "config_hash": "dummy_config",
+            "config_hash": config_hash,
+            "prompt_hashes": prompt_hashes,
         },
         "metrics": suite_metrics or {"dummy": 1}
     }

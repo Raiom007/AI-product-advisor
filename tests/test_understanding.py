@@ -57,3 +57,77 @@ def test_parse_query_with_fake_provider():
     # but the budget cross_check will run!
     pq = parse_query(gateway, "laptop under 40k", "Laptops", {"Laptops"})
     assert pq.budget.max_inr == 40000.0 # Thanks to cross check
+
+
+# ── fallback_parser category map (item 1 / diagnostic fix) ───────────────────
+
+def test_fallback_parser_phone_routes_to_cell_phones():
+    """Core regression: "phone" must map to Cell Phones & Accessories in degraded mode.
+    WHY: without this, BM25 matches 'Chinese phone number' (SIM card) for phone queries.
+    """
+    pq = fallback_parser("ek acha phone dikhana under 40k")
+    assert pq.category == "Cell Phones & Accessories", (
+        f"Expected 'Cell Phones & Accessories', got {pq.category!r}"
+    )
+    assert pq.budget.max_inr == 40000.0
+
+
+def test_fallback_parser_smartphone_routes_to_cell_phones():
+    pq = fallback_parser("best smartphone under 30000")
+    assert pq.category == "Cell Phones & Accessories"
+
+
+def test_fallback_parser_laptop_routes_to_electronics():
+    pq = fallback_parser("gaming laptop under 80k")
+    # "gaming laptop" is more specific and must beat bare "laptop" stem
+    assert pq.category == "Electronics"
+
+
+def test_fallback_parser_smartwatch_routes_to_electronics():
+    pq = fallback_parser("good smartwatch under 15k")
+    assert pq.category == "Electronics"
+    assert pq.subcategory == "Wearable Technology"
+
+
+def test_fallback_parser_tv_routes_to_electronics():
+    pq = fallback_parser("4k tv under 50000")
+    assert pq.category == "Electronics"
+
+
+def test_fallback_parser_monitor_routes_to_electronics():
+    pq = fallback_parser("27 inch monitor under 20k")
+    assert pq.category == "Electronics"
+
+
+def test_fallback_parser_router_routes_to_electronics():
+    pq = fallback_parser("wifi router under 5000")
+    assert pq.category == "Electronics"
+
+
+def test_fallback_parser_speaker_routes_to_electronics():
+    pq = fallback_parser("bluetooth speaker under 3k")
+    assert pq.category == "Electronics"
+
+
+def test_fallback_parser_mouse_routes_to_electronics():
+    pq = fallback_parser("wireless mouse")
+    assert pq.category == "Electronics"
+
+
+def test_fallback_parser_keyboard_routes_to_electronics():
+    pq = fallback_parser("mechanical keyboard under 5000")
+    assert pq.category == "Electronics"
+
+
+def test_fallback_parser_no_keyword_gives_no_category():
+    """Ambiguous query with no known keyword must not force a wrong category."""
+    pq = fallback_parser("something nice under 10k")
+    assert pq.category is None
+
+
+def test_fallback_parser_budget_unchanged_by_category_logic():
+    """Category extraction must not corrupt the budget."""
+    pq = fallback_parser("phone under 40 hazaar")
+    assert pq.budget.max_inr == 40000.0
+    assert pq.category == "Cell Phones & Accessories"
+

@@ -24,6 +24,7 @@ class PlanStep(BaseModel):
 class AgentState(BaseModel):
     session_id: str
     query: str
+    chat_history: list[dict] = Field(default_factory=list)
     parsed: ParsedQuery | None = None
     plan: list[PlanStep] = []
     step: int = 0

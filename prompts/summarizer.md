@@ -10,4 +10,6 @@ DO NOT invent review IDs. You must only use the IDs provided for that specific p
 Additionally, evaluate the `use_case_fit` based on the reviews, assigning a `verdict` of `good`, `mixed`, `poor`, or `unknown`.
 Also provide the `review_ids` that support this verdict.
 
+CRITICAL: You MUST return a single JSON object containing a single key called "summaries". The value of "summaries" must be a list of the product summary objects. DO NOT return a single product summary object directly at the root.
+
 {{reviews_content}}

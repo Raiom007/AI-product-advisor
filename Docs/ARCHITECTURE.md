@@ -35,7 +35,7 @@
 
 ```mermaid
 flowchart TB
-  UI["Streamlit UI: Chat, Trace viewer, Fake-review inspector"] --> SVC["Service facade"]
+  UI["React SPA with OAuth"] --> API["FastAPI (REST)"] --> SVC["Service facade"]
   SVC --> AG["Agent: planner, tool registry, verifiers, state machine"]
   AG --> QU["Query understanding"]
   AG --> RET["Hybrid retrieval"]

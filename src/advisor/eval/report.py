@@ -21,7 +21,9 @@ def generate_report(metrics_path: str = "eval/metrics.json", out_path: str = "ev
         f.write("# Evaluation Report\n\n")
         f.write("## Metadata\n")
         for k, v in header.items():
-            if isinstance(v, dict):
+            if k == "mode" and v == "replay":
+                f.write(f"- **{k}**: `{v}` *(Note: 'replay' uses cached API calls, but ADVISOR_PROFILE=prod means un-cached calls hit live Groq)*\n")
+            elif isinstance(v, dict):
                 f.write(f"- **{k}**:\n")
                 for sub_k, sub_v in v.items():
                     f.write(f"  - {sub_k}: `{sub_v}`\n")
@@ -40,9 +42,9 @@ def generate_report(metrics_path: str = "eval/metrics.json", out_path: str = "ev
         f.write("| Metric | System | Baseline | Delta |\n")
         f.write("|--------|--------|----------|-------|\n")
 
-        ndcg = metrics.get("ndcg_5", 0)
+        ndcg_val = metrics.get("ndcg_5", 0)
         base_ndcg = metrics.get("baseline_ndcg_5", 0)
-        f.write(f"| NDCG@5 | {ndcg:.2f} | {base_ndcg:.2f} | {ndcg - base_ndcg:+.2f} |\n")
+        f.write(f"| NDCG@5 | {ndcg_val:.2f} | {base_ndcg:.2f} | {ndcg_val - base_ndcg:+.2f} |\n")
 
         rec = metrics.get("recall_10", 0)
         base_rec = metrics.get("baseline_recall_10", 0)
@@ -53,7 +55,43 @@ def generate_report(metrics_path: str = "eval/metrics.json", out_path: str = "ev
         f.write(f"| p95 Latency | {p95_lat:.1f}s | N/A | N/A |\n")
 
         f.write("\n## 10 Worst Queries\n")
-        f.write("*(Per-query metrics not implemented in MVP)*\n")
+        try:
+            import math
+            def dcg(relevances, k=5):
+                score = 0.0
+                for i, rel in enumerate(relevances[:k]):
+                    score += rel / math.log2(i + 2)
+                return score
+            def calc_ndcg(sys_ids, gold_rel, k=5):
+                sys_rels = [gold_rel.get(pid, 0) for pid in sys_ids]
+                ideal_rels = sorted(gold_rel.values(), reverse=True)
+                idcg = dcg(ideal_rels, k)
+                return dcg(sys_rels, k) / idcg if idcg > 0 else 0.0
+
+            gold = {}
+            with open("eval/data/gold.jsonl") as gf:
+                for line in gf:
+                    if line.strip():
+                        j = json.loads(line)
+                        gold[j["query_id"]] = j.get("relevance", {})
+                        
+            with open("eval/results/per_query.jsonl") as pqf:
+                queries = []
+                for line in pqf:
+                    if line.strip():
+                        q = json.loads(line)
+                        g = gold.get(q["query_id"], {})
+                        score = calc_ndcg(q.get("system_top10", []), g, 5)
+                        q["sys_ndcg_5"] = score
+                        queries.append(q)
+                
+                queries.sort(key=lambda x: (x["sys_ndcg_5"], x["query_id"]))
+                f.write("| query_id | status | NDCG@5 |\n")
+                f.write("|----------|--------|--------|\n")
+                for q in queries[:10]:
+                    f.write(f"| {q['query_id']} | {q.get('status', '')} | {q['sys_ndcg_5']:.2f} |\n")
+        except Exception as e:
+            f.write(f"*(Could not compute worst queries: {e})*\n")
 
     print(f"Wrote {out_path}")
 

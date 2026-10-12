@@ -10,13 +10,38 @@ from advisor.core.schemas import AdvisorResponse
 from advisor.core.tracing import Tracer
 from advisor.llm.gateway import Gateway
 
+import json
+import hashlib
+
 logger = logging.getLogger(__name__)
 
 _SESSIONS = {}
+_RESPONSE_CACHE = {}
 
-def advise(query: str, session_id: str) -> AdvisorResponse:
+def advise(query: str, session_id: str, chat_history: list[dict] = None) -> AdvisorResponse:
     """Facade for the advisor service."""
     config = load_config()
+    chat_history = chat_history or []
+
+    key_input = json.dumps({"query": query, "history": chat_history}, sort_keys=True)
+    cache_key = hashlib.md5(key_input.encode()).hexdigest()
+
+    if cache_key in _RESPONSE_CACHE:
+        logger.info(f"Memory cache hit for query: {query!r}")
+        cached_resp = _RESPONSE_CACHE[cache_key]
+        
+        # MUST populate _SESSIONS so that if the cached response is "needs_clarification",
+        # the next turn correctly appends the user's answer to this query.
+        state = AgentState(
+            session_id=session_id, 
+            query=query, 
+            budget=RequestBudget.from_config(config.get("limits", {})), 
+            chat_history=chat_history
+        )
+        state.status = cached_resp.status
+        _SESSIONS[session_id] = state
+        
+        return cached_resp.model_copy(update={"trace_id": str(uuid.uuid4())})
 
     trace_id = str(uuid.uuid4())
     tracer = Tracer(trace_id=trace_id, traces_dir=Path("data/traces"))
@@ -27,16 +52,25 @@ def advise(query: str, session_id: str) -> AdvisorResponse:
         state = _SESSIONS.get(session_id)
         if not state:
             budget = RequestBudget.from_config(config.get("limits", {}))
-            state = AgentState(session_id=session_id, query=query, budget=budget)
+            state = AgentState(session_id=session_id, query=query, budget=budget, chat_history=chat_history)
             _SESSIONS[session_id] = state
         else:
             if state.status == "needs_clarification":
+                prior_q = state.query
+                prior_msg = state.message or "Can you clarify?"
                 state.query += " " + query
+                if not chat_history:
+                    chat_history = [
+                        {"role": "user", "content": prior_q},
+                        {"role": "assistant", "content": prior_msg}
+                    ]
+                state.chat_history = chat_history
                 state.status = "ok"
                 # Keep step as it is, which is where it paused
             else:
                 budget = RequestBudget.from_config(config.get("limits", {}))
-                state = AgentState(session_id=session_id, query=query, budget=budget)
+                # New turn in conversation
+                state = AgentState(session_id=session_id, query=query, budget=budget, chat_history=chat_history)
                 _SESSIONS[session_id] = state
 
         state.trace_id = trace_id
@@ -55,14 +89,19 @@ def advise(query: str, session_id: str) -> AdvisorResponse:
 
         span.output_summary = f"status={state.status}, recommendations={len(state.recommendations)}"
 
-        return AdvisorResponse(
+        suggested = state.parsed.suggested_answers if state.parsed else []
+        resp = AdvisorResponse(
             recommendations=state.recommendations,
             status=state.status,
             message=state.message,
+            suggested_answers=suggested,
             trace_id=trace_id,
             degraded=state.degraded,
             budget_report=state.budget.report()
         )
+        
+        _RESPONSE_CACHE[cache_key] = resp
+        return resp
 
 if __name__ == "__main__":
     import sys
