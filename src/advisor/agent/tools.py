@@ -73,7 +73,6 @@ def _get_stores(context: dict):
 def parse_query_tool(state: AgentState, context: dict) -> ToolResult:
     start_t = time.time()
     from advisor.llm.gateway import Gateway
-    from advisor.understanding.clarify import apply_ambiguity_rule
     from advisor.understanding.parser import parse_query
 
     gateway = context.get("gateway")
@@ -184,14 +183,14 @@ def retrieve_tool(state: AgentState, context: dict) -> ToolResult:
                     raw_text="budget"
                 ))
         query_text = pq.query_en if pq else state.query
-        
+
         # Check if live web scraper is enabled
         use_scraper = cfg.get("features", {}).get("data_source", {}).get("web_scraper", False)
-        
+
         # SIMULATE a live web scraper by using our hybrid search engine against the
         # authorized McAuley dataset. This avoids CAPTCHAs, returns real products (not DummyJSON cases),
         # and supports proper semantic search (like "coding / programming") which Pandas can't do.
-        
+
         # 1. SQL filter → allow-list
         allow_ids, residual = build_allow_list(conn, hard_constraints)
 
@@ -224,14 +223,14 @@ def retrieve_tool(state: AgentState, context: dict) -> ToolResult:
                     except json.JSONDecodeError:
                         p["image_urls"] = p["image_urls"].split("|") if p["image_urls"] else []
                 p["rrf_score"] = rrf_score
-                
+
                 # Tag as from the live scraper if the feature is enabled
                 if use_scraper:
                     p["contributors"] = "live_web_scraper"
                     p["_live_reviews"] = []
                 else:
                     p["contributors"] = contributors
-                    
+
                 p["residual_constraints"] = residual
                 shortlist.append(p)
 
@@ -242,18 +241,24 @@ def retrieve_tool(state: AgentState, context: dict) -> ToolResult:
         if pq and pq.subcategory == "Computers & Tablets":
             q_en = (pq.query_en or "").lower()
             use_case = (pq.use_case or "").lower()
-            if "laptop" in q_en or "laptop" in use_case or "notebook" in q_en:
-                _LAPTOP_KWS = {"laptop", "notebook", "chromebook", "ultrabook", "macbook"}
-                _TABLET_ONLY = {"tablet", "ipad", "tab ", " tab", "portal", "nook", "kindle"}
+            if any(k in q_en for k in ["laptop", "notebook", "macbook"]) or "laptop" in use_case:
+                laptop_kws = {"laptop", "notebook", "chromebook", "ultrabook", "macbook"}
+                tablet_only = {"tablet", "ipad", "tab ", " tab", "portal", "nook", "kindle"}
                 def _is_laptop(name: str) -> bool:
                     nl = name.lower()
-                    if any(k in nl for k in _LAPTOP_KWS):
+                    if any(k in nl for k in laptop_kws):
                         return True
-                    if any(k in nl for k in _TABLET_ONLY):
+                    if any(k in nl for k in tablet_only):
                         return False
                     return True  # desktop/AIO — keep (user may be flexible)
                 shortlist = [p for p in shortlist if _is_laptop(p.get("name", ""))]
                 print(f"DEBUG laptop filter: {len(shortlist)} remain after tablet/portal removal")
+
+            if "macbook" in q_en:
+                _macs = [p for p in shortlist if "macbook" in p.get("name", "").lower()]
+                if _macs:
+                    shortlist = _macs
+                    print(f"DEBUG macbook filter: {len(shortlist)} macbooks shortlisted")
 
         ms = int((time.time() - start_t) * 1000)
         return ToolResult(
@@ -310,7 +315,7 @@ def analyse_reviews_tool(state: AgentState, context: dict) -> ToolResult:
                 if p["_live_reviews"]:
                     product_reviews[pid] = p["_live_reviews"]
                 continue
-                
+
             rows = conn.execute(
                 """SELECT review_id, text, rating, helpful_votes
                    FROM reviews
@@ -502,7 +507,7 @@ def compose_answer_tool(state: AgentState, context: dict) -> ToolResult:
             rec.score.ext["effective_price_inr"] = p.get("effective_price_inr")
             rec.score.ext["image_urls"] = p.get("image_urls")
             rec.score.ext["description"] = p.get("description")
-            
+
             # ALWAYS use an Amazon search URL so the link never 404s (ASINs from 2023 expire).
             name_query = p.get("name", "").replace(" ", "+")
             rec.score.ext["url"] = f"https://www.amazon.com/s?k={name_query}"
