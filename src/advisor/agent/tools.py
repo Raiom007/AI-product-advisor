@@ -12,6 +12,7 @@ Store singletons (embedder, vector index, keyword index, sqlite conn) are now
 module-level globals built once on first access.  All advise() calls in the
 same running process share them — no per-session or per-context rebuild.
 """
+import re
 import time
 from collections.abc import Callable
 from pathlib import Path
@@ -183,6 +184,10 @@ def retrieve_tool(state: AgentState, context: dict) -> ToolResult:
                     raw_text="budget"
                 ))
         query_text = pq.query_en if pq else state.query
+        if state.chat_history:
+            prior_user_msgs = [m.get("content", "") for m in state.chat_history if isinstance(m, dict) and m.get("role") == "user"]
+            if prior_user_msgs:
+                query_text = f"{prior_user_msgs[-1]} {query_text}"
 
         # Check if live web scraper is enabled
         use_scraper = cfg.get("features", {}).get("data_source", {}).get("web_scraper", False)
@@ -241,24 +246,114 @@ def retrieve_tool(state: AgentState, context: dict) -> ToolResult:
         if pq and pq.subcategory == "Computers & Tablets":
             q_en = (pq.query_en or "").lower()
             use_case = (pq.use_case or "").lower()
-            if any(k in q_en for k in ["laptop", "notebook", "macbook"]) or "laptop" in use_case:
-                laptop_kws = {"laptop", "notebook", "chromebook", "ultrabook", "macbook"}
-                tablet_only = {"tablet", "ipad", "tab ", " tab", "portal", "nook", "kindle"}
-                def _is_laptop(name: str) -> bool:
-                    nl = name.lower()
-                    if any(k in nl for k in laptop_kws):
-                        return True
-                    if any(k in nl for k in tablet_only):
-                        return False
-                    return True  # desktop/AIO — keep (user may be flexible)
-                shortlist = [p for p in shortlist if _is_laptop(p.get("name", ""))]
-                print(f"DEBUG laptop filter: {len(shortlist)} remain after tablet/portal removal")
+            history_text = " ".join([m.get("content", "") for m in state.chat_history if isinstance(m, dict)])
+            raw_text = f"{q_en} {state.query} {history_text}".lower()
+            accessory_patterns = [
+                r"\bsleeve\b", r"\bcase\b", r"\bcover\b", r"\bskin\b", r"\bsticker\b",
+                r"\bdecal\b", r"\bstand\b", r"\bholder\b", r"\bcharger\b", r"\bpower bank\b",
+                r"\bprotector\b", r"\bcable\b", r"\bcooling pad\b", r"\bcooler\b",
+                r"\bbackpack\b", r"\bbag\b", r"\bdock\b", r"\bhub\b", r"\bheadphones\b",
+                r"\bearbuds\b", r"\bearphones\b", r"\bheadset\b", r"\btablet\b", r"\bipad\b",
+                r"\bsolid state drive\b", r"\bhard drive\b", r"\binternal drive\b", r"\bsata\b"
+            ]
+            laptop_kws = ["laptop", "notebook", "chromebook", "ultrabook", "macbook", "galaxy book", "ideapad", "flex", "thinkpad"]
 
-            if "macbook" in q_en:
-                _macs = [p for p in shortlist if "macbook" in p.get("name", "").lower()]
-                if _macs:
-                    shortlist = _macs
-                    print(f"DEBUG macbook filter: {len(shortlist)} macbooks shortlisted")
+            def _is_laptop(name: str) -> bool:
+                nl = name.lower()
+                for pat in accessory_patterns:
+                    if re.search(pat, nl):
+                        return False
+                return any(k in nl for k in laptop_kws)
+
+            if any(k in raw_text for k in ["laptop", "notebook", "macbook"]) or "laptop" in use_case:
+                shortlist = [p for p in shortlist if _is_laptop(p.get("name", ""))]
+                print(f"DEBUG laptop filter: {len(shortlist)} remain after non-laptop removal")
+
+            # Brand gating: if user explicitly asked for a specific brand, enforce it
+            known_brands = ["samsung", "apple", "macbook", "lenovo", "dell", "hp", "asus", "acer"]
+            matched_brand = None
+            for b in known_brands:
+                if re.search(r"\b" + b + r"\b", raw_text):
+                    matched_brand = "apple" if b == "macbook" else b
+                    break
+
+            if matched_brand:
+                def _matches_brand(p: dict) -> bool:
+                    b_col = (p.get("brand") or "").lower()
+                    name = p.get("name", "").lower()
+                    if matched_brand == b_col or b_col.startswith(matched_brand):
+                        return True
+                    if name.startswith(matched_brand):
+                        return True
+                    if matched_brand == "apple" and (name.startswith("macbook") or "macbook" in name):
+                        return True
+                    return False
+
+                brand_shortlist = [p for p in shortlist if _matches_brand(p)]
+                if brand_shortlist:
+                    shortlist = brand_shortlist
+                    print(f"DEBUG brand filter ({matched_brand}): {len(shortlist)} shortlisted")
+                else:
+                    # Hybrid retrieval didn't return this brand; fetch directly from products table
+                    sql_brand = f"%{matched_brand}%"
+                    max_p = pq.budget.max_inr if (pq and pq.budget and pq.budget.max_inr) else 999999999.0
+                    brand_rows = conn.execute(
+                        """SELECT product_id, name, brand, cat_l1, cat_l2,
+                                  effective_price_inr, description, image_urls
+                           FROM products
+                           WHERE (LOWER(brand) LIKE ? OR LOWER(name) LIKE ?)
+                             AND (
+                                 LOWER(name) LIKE '%laptop%'
+                              OR LOWER(name) LIKE '%notebook%'
+                              OR LOWER(name) LIKE '%book%'
+                              OR LOWER(name) LIKE '%chromebook%'
+                             )
+                             AND effective_price_inr <= ?
+                           ORDER BY effective_price_inr DESC LIMIT 100""",
+                        (sql_brand, sql_brand, max_p),
+                    ).fetchall()
+                    direct_matches = []
+                    for row in brand_rows:
+                        p = dict(row)
+                        is_lap = _is_laptop(p.get("name", ""))
+                        if is_lap and _matches_brand(p):
+                            if isinstance(p.get("image_urls"), str):
+                                try:
+                                    p["image_urls"] = json.loads(p["image_urls"])
+                                except Exception:
+                                    p["image_urls"] = p["image_urls"].split("|") if p["image_urls"] else []
+                            p["rrf_score"] = 0.5
+                            p["contributors"] = "brand_direct"
+                            p["residual_constraints"] = residual
+                            direct_matches.append(p)
+                    shortlist = direct_matches
+                    print(f"DEBUG brand direct fallback ({matched_brand}): {len(shortlist)} found")
+
+            if not shortlist and not matched_brand and (any(k in raw_text for k in ["laptop", "notebook", "macbook"]) or "laptop" in use_case):
+                max_p = pq.budget.max_inr if (pq and pq.budget and pq.budget.max_inr) else 999999999.0
+                fallback_rows = conn.execute(
+                    """SELECT product_id, name, brand, cat_l1, cat_l2,
+                              effective_price_inr, description, image_urls
+                       FROM products
+                       WHERE (cat_l2 LIKE '%Computer%' OR cat_l2 LIKE '%Tablet%')
+                         AND effective_price_inr <= ?
+                       ORDER BY effective_price_inr DESC LIMIT 20""",
+                    (max_p,)
+                ).fetchall()
+                for row in fallback_rows:
+                    p = dict(row)
+                    if _is_laptop(p.get("name", "")):
+                        if isinstance(p.get("image_urls"), str):
+                            try:
+                                p["image_urls"] = json.loads(p["image_urls"])
+                            except Exception:
+                                p["image_urls"] = p["image_urls"].split("|") if p["image_urls"] else []
+                        p["rrf_score"] = 0.4
+                        p["contributors"] = "catalog_fallback"
+                        p["residual_constraints"] = residual
+                        shortlist.append(p)
+                        if len(shortlist) >= 5:
+                            break
 
         ms = int((time.time() - start_t) * 1000)
         return ToolResult(
