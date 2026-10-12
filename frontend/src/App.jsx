@@ -91,6 +91,11 @@ const ProductImage = ({ rec, style }) => {
   const [currentIdx, setCurrentIdx] = useState(0);
   const [hasError, setHasError] = useState(false);
 
+  useEffect(() => {
+    setCurrentIdx(0);
+    setHasError(false);
+  }, [rec?.product_id]);
+
   const getFallbackIcon = () => {
     const cat = `${rec?.score?.ext?.cat_l1 || ''} ${rec?.score?.ext?.cat_l2 || ''} ${rec?.category || ''}`.toLowerCase();
     const name = (rec?.score?.ext?.name || rec?.product_id || '').toLowerCase();
@@ -111,6 +116,7 @@ const ProductImage = ({ rec, style }) => {
 
   return (
     <img
+      key={images[currentIdx]}
       src={images[currentIdx]}
       alt={rec?.score?.ext?.name || 'Product'}
       referrerPolicy="no-referrer"
@@ -137,80 +143,109 @@ const ProductImage = ({ rec, style }) => {
 
 const ModalGallery = ({ product }) => {
   const rawUrls = product?.score?.ext?.image_urls;
-  const images = Array.isArray(rawUrls)
+  const initialImages = Array.isArray(rawUrls)
     ? rawUrls.filter(u => typeof u === 'string' && u.trim().startsWith('http'))
     : (typeof rawUrls === 'string' && rawUrls.trim().startsWith('http') ? [rawUrls.trim()] : []);
 
+  const [failedUrls, setFailedUrls] = useState(new Set());
   const [selectedIdx, setSelectedIdx] = useState(0);
 
-  if (!images.length) {
+  const validImages = initialImages.filter(url => !failedUrls.has(url));
+
+  const markFailed = (url) => {
+    setFailedUrls(prev => {
+      const next = new Set(prev);
+      next.add(url);
+      return next;
+    });
+  };
+
+  const getFallbackIcon = () => {
     const cat = `${product?.score?.ext?.cat_l1 || ''} ${product?.score?.ext?.cat_l2 || ''} ${product?.category || ''}`.toLowerCase();
     const name = (product?.score?.ext?.name || '').toLowerCase();
-    const icon = (cat.includes('laptop') || name.includes('laptop') || name.includes('macbook')) ? '💻' : (cat.includes('cell') || cat.includes('phone') || name.includes('phone')) ? '📱' : (cat.includes('tv') || name.includes('tv')) ? '📺' : '📦';
+    if (cat.includes('laptop') || name.includes('laptop') || name.includes('macbook') || name.includes('book')) return '💻';
+    if (cat.includes('cell') || cat.includes('phone') || name.includes('phone') || name.includes('galaxy')) return '📱';
+    if (cat.includes('tv') || name.includes('tv') || name.includes('television')) return '📺';
+    if (cat.includes('headphone') || cat.includes('audio') || name.includes('audio')) return '🎧';
+    return '📦';
+  };
+
+  if (!validImages.length) {
     return (
       <div style={{
-        height: '160px',
+        height: '180px',
         display: 'flex',
+        flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
+        gap: '0.5rem',
         backgroundColor: '#f8fafc',
         border: '2px dashed var(--border-color)',
         borderRadius: '8px',
-        fontSize: '3rem',
-        marginBottom: '1rem'
+        marginBottom: '1.25rem'
       }}>
-        {icon}
+        <span style={{ fontSize: '3rem' }}>{getFallbackIcon()}</span>
+        <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 'bold' }}>
+          {product.score?.ext?.brand || 'Product'} Verified Specs
+        </span>
       </div>
     );
   }
+
+  // Ensure selectedIdx is within range
+  const safeIdx = selectedIdx < validImages.length ? selectedIdx : 0;
+  const currentImg = validImages[safeIdx];
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.75rem', marginBottom: '1.5rem' }}>
       <div style={{
         width: '100%',
-        height: '220px',
+        height: '240px',
         backgroundColor: '#ffffff',
         border: '2px solid var(--border-color)',
         borderRadius: '8px',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        padding: '0.5rem',
+        padding: '0.75rem',
         boxShadow: '3px 3px 0px var(--border-color)',
         overflow: 'hidden'
       }}>
         <img
-          src={images[selectedIdx]}
+          key={currentImg}
+          src={currentImg}
           alt={product.score?.ext?.name || 'Product'}
           referrerPolicy="no-referrer"
           crossOrigin="anonymous"
+          onError={() => markFailed(currentImg)}
           style={{ maxHeight: '100%', maxWidth: '100%', objectFit: 'contain' }}
         />
       </div>
-      {images.length > 1 && (
+      {validImages.length > 1 && (
         <div style={{ display: 'flex', gap: '0.5rem', overflowX: 'auto', maxWidth: '100%', padding: '0.25rem' }}>
-          {images.map((img, idx) => (
+          {validImages.map((img, idx) => (
             <button
-              key={idx}
+              key={img}
               onClick={() => setSelectedIdx(idx)}
               style={{
-                width: '46px',
-                height: '46px',
+                width: '48px',
+                height: '48px',
                 padding: '2px',
                 backgroundColor: '#ffffff',
-                border: idx === selectedIdx ? '2px solid #2563eb' : '1px solid var(--border-color)',
+                border: idx === safeIdx ? '2px solid #2563eb' : '1px solid var(--border-color)',
                 borderRadius: '4px',
                 cursor: 'pointer',
-                opacity: idx === selectedIdx ? 1 : 0.6,
-                transform: idx === selectedIdx ? 'scale(1.05)' : 'none',
+                opacity: idx === safeIdx ? 1 : 0.6,
+                transform: idx === safeIdx ? 'scale(1.05)' : 'none',
                 transition: 'all 0.15s ease',
                 flexShrink: 0
               }}
             >
               <img
                 src={img}
-                alt="thumb"
+                alt="preview"
                 referrerPolicy="no-referrer"
+                onError={() => markFailed(img)}
                 style={{ width: '100%', height: '100%', objectFit: 'contain' }}
               />
             </button>
