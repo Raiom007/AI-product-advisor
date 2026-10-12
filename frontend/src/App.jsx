@@ -82,6 +82,145 @@ const SplashScreen = () => {
   );
 };
 
+const ProductImage = ({ rec, style }) => {
+  const rawUrls = rec?.score?.ext?.image_urls;
+  const images = Array.isArray(rawUrls)
+    ? rawUrls.filter(u => typeof u === 'string' && u.trim().startsWith('http'))
+    : (typeof rawUrls === 'string' && rawUrls.trim().startsWith('http') ? [rawUrls.trim()] : []);
+
+  const [currentIdx, setCurrentIdx] = useState(0);
+  const [hasError, setHasError] = useState(false);
+
+  const getFallbackIcon = () => {
+    const cat = `${rec?.score?.ext?.cat_l1 || ''} ${rec?.score?.ext?.cat_l2 || ''} ${rec?.category || ''}`.toLowerCase();
+    const name = (rec?.score?.ext?.name || rec?.product_id || '').toLowerCase();
+    if (cat.includes('laptop') || name.includes('laptop') || name.includes('macbook') || name.includes('book') || name.includes('thinkpad')) return '💻';
+    if (cat.includes('cell') || cat.includes('phone') || name.includes('phone') || name.includes('galaxy') || name.includes('iphone')) return '📱';
+    if (cat.includes('tv') || name.includes('tv') || name.includes('television')) return '📺';
+    if (cat.includes('headphone') || cat.includes('audio') || name.includes('headphone') || name.includes('earbuds')) return '🎧';
+    return '📦';
+  };
+
+  if (!images.length || hasError || currentIdx >= images.length) {
+    return (
+      <span style={{ fontSize: '2rem', display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', height: '100%' }}>
+        {getFallbackIcon()}
+      </span>
+    );
+  }
+
+  return (
+    <img
+      src={images[currentIdx]}
+      alt={rec?.score?.ext?.name || 'Product'}
+      referrerPolicy="no-referrer"
+      crossOrigin="anonymous"
+      loading="lazy"
+      onError={() => {
+        if (currentIdx + 1 < images.length) {
+          setCurrentIdx(prev => prev + 1);
+        } else {
+          setHasError(true);
+        }
+      }}
+      style={{
+        width: '100%',
+        height: '100%',
+        objectFit: 'contain',
+        backgroundColor: '#ffffff',
+        borderRadius: '4px',
+        ...style,
+      }}
+    />
+  );
+};
+
+const ModalGallery = ({ product }) => {
+  const rawUrls = product?.score?.ext?.image_urls;
+  const images = Array.isArray(rawUrls)
+    ? rawUrls.filter(u => typeof u === 'string' && u.trim().startsWith('http'))
+    : (typeof rawUrls === 'string' && rawUrls.trim().startsWith('http') ? [rawUrls.trim()] : []);
+
+  const [selectedIdx, setSelectedIdx] = useState(0);
+
+  if (!images.length) {
+    const cat = `${product?.score?.ext?.cat_l1 || ''} ${product?.score?.ext?.cat_l2 || ''} ${product?.category || ''}`.toLowerCase();
+    const name = (product?.score?.ext?.name || '').toLowerCase();
+    const icon = (cat.includes('laptop') || name.includes('laptop') || name.includes('macbook')) ? '💻' : (cat.includes('cell') || cat.includes('phone') || name.includes('phone')) ? '📱' : (cat.includes('tv') || name.includes('tv')) ? '📺' : '📦';
+    return (
+      <div style={{
+        height: '160px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: '#f8fafc',
+        border: '2px dashed var(--border-color)',
+        borderRadius: '8px',
+        fontSize: '3rem',
+        marginBottom: '1rem'
+      }}>
+        {icon}
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.75rem', marginBottom: '1.5rem' }}>
+      <div style={{
+        width: '100%',
+        height: '220px',
+        backgroundColor: '#ffffff',
+        border: '2px solid var(--border-color)',
+        borderRadius: '8px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '0.5rem',
+        boxShadow: '3px 3px 0px var(--border-color)',
+        overflow: 'hidden'
+      }}>
+        <img
+          src={images[selectedIdx]}
+          alt={product.score?.ext?.name || 'Product'}
+          referrerPolicy="no-referrer"
+          crossOrigin="anonymous"
+          style={{ maxHeight: '100%', maxWidth: '100%', objectFit: 'contain' }}
+        />
+      </div>
+      {images.length > 1 && (
+        <div style={{ display: 'flex', gap: '0.5rem', overflowX: 'auto', maxWidth: '100%', padding: '0.25rem' }}>
+          {images.map((img, idx) => (
+            <button
+              key={idx}
+              onClick={() => setSelectedIdx(idx)}
+              style={{
+                width: '46px',
+                height: '46px',
+                padding: '2px',
+                backgroundColor: '#ffffff',
+                border: idx === selectedIdx ? '2px solid #2563eb' : '1px solid var(--border-color)',
+                borderRadius: '4px',
+                cursor: 'pointer',
+                opacity: idx === selectedIdx ? 1 : 0.6,
+                transform: idx === selectedIdx ? 'scale(1.05)' : 'none',
+                transition: 'all 0.15s ease',
+                flexShrink: 0
+              }}
+            >
+              <img
+                src={img}
+                alt="thumb"
+                referrerPolicy="no-referrer"
+                style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+              />
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
 function App() {
   const { loginWithRedirect, logout, isAuthenticated, user, getAccessTokenSilently, isLoading } = useAuth0();
   
@@ -521,12 +660,8 @@ function App() {
                             <div style={{display: 'flex', flexDirection: 'column', gap: '1rem', marginTop: '1rem'}}>
                               {data.recommendations.map((rec, rIdx) => (
                                 <div key={rIdx} className="product-card" style={{alignItems: 'flex-start'}}>
-                                  <div className="product-image" style={{overflow: 'hidden'}}>
-                                    {rec.score.ext?.image_urls && rec.score.ext.image_urls.length > 0 ? (
-                                      <img src={rec.score.ext.image_urls[0]} alt="product" style={{width: '100%', height: '100%', objectFit: 'contain'}} />
-                                    ) : (
-                                      rec.category === "TVs" ? "📺" : rec.category === "Laptops" ? "💻" : "📦"
-                                    )}
+                                  <div className="product-image" style={{overflow: 'hidden', backgroundColor: '#ffffff'}}>
+                                    <ProductImage rec={rec} />
                                   </div>
                                   <div className="product-info" style={{flex: 1}}>
                                     <h3>{rec.score.ext?.name || rec.product_id}</h3>
@@ -599,41 +734,49 @@ function App() {
           display: 'flex', alignItems: 'center', justifyContent: 'center'
         }} onClick={() => setSelectedProduct(null)}>
           <div className="neo-window" style={{
-            width: '90%', maxWidth: '600px', backgroundColor: '#fff',
-            maxHeight: '80vh', overflowY: 'auto'
+            width: '90%', maxWidth: '620px', backgroundColor: '#fff',
+            maxHeight: '85vh', overflowY: 'auto'
           }} onClick={e => e.stopPropagation()}>
             <header className="neo-header pink">
               <WindowControls />
-              <span>Specs: {selectedProduct.score.ext?.name || selectedProduct.product_id}</span>
+              <span style={{overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap'}}>
+                Specs: {selectedProduct.score.ext?.name || selectedProduct.product_id}
+              </span>
               <button className="neo-btn" style={{padding: '0.2rem 0.5rem', backgroundColor: '#e2e8f0'}} onClick={() => setSelectedProduct(null)}>X</button>
             </header>
-            <div style={{padding: '2rem'}}>
-              {selectedProduct.score.ext?.effective_price_inr && (
-                <div style={{marginBottom: '1rem', fontSize: '1.5rem', fontWeight: 'bold', color: '#059669'}}>
-                  Price: ₹{selectedProduct.score.ext.effective_price_inr.toLocaleString()}
-                </div>
-              )}
-              {selectedProduct.score.ext?.brand && (
-                <div style={{marginBottom: '1rem'}}>
-                  <strong>Brand:</strong> {selectedProduct.score.ext.brand}
-                </div>
-              )}
+            <div style={{padding: '1.5rem'}}>
+              {/* Product Gallery in Modal */}
+              <ModalGallery product={selectedProduct} />
+
+              <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '1rem'}}>
+                {selectedProduct.score.ext?.effective_price_inr && (
+                  <div style={{fontSize: '1.5rem', fontWeight: 'bold', color: '#059669'}}>
+                    ₹{selectedProduct.score.ext.effective_price_inr.toLocaleString()}
+                  </div>
+                )}
+                {selectedProduct.score.ext?.brand && (
+                  <span className="neo-pill pill-yellow" style={{margin: 0, fontWeight: 'bold'}}>
+                    Brand: {selectedProduct.score.ext.brand}
+                  </span>
+                )}
+              </div>
+
               {selectedProduct.score.ext?.url && (
-                <div style={{marginBottom: '1.5rem'}}>
+                <div style={{marginBottom: '1.25rem'}}>
                   <a 
                     href={selectedProduct.score.ext.url} 
                     target="_blank" 
                     rel="noreferrer"
                     className="neo-btn"
-                    style={{display: 'inline-block', textDecoration: 'none', backgroundColor: '#38bdf8', color: 'black'}}
+                    style={{display: 'inline-block', textDecoration: 'none', backgroundColor: '#38bdf8', color: 'black', fontWeight: 'bold'}}
                   >
                     🛒 View on Amazon
                   </a>
                 </div>
               )}
               <div>
-                <h4 style={{fontSize: '1.2rem', marginBottom: '0.5rem'}}>Description / Specifications:</h4>
-                <p style={{lineHeight: '1.6', color: '#334155', whiteSpace: 'pre-wrap'}}>
+                <h4 style={{fontSize: '1.1rem', marginBottom: '0.5rem'}}>Description / Specifications:</h4>
+                <p style={{lineHeight: '1.6', color: '#334155', whiteSpace: 'pre-wrap', fontSize: '0.95rem'}}>
                   {selectedProduct.score.ext?.description || "No detailed specs available."}
                 </p>
               </div>

@@ -599,8 +599,18 @@ def compose_answer_tool(state: AgentState, context: dict) -> ToolResult:
             )
             rec.score.ext["name"] = p.get("name")
             rec.score.ext["brand"] = p.get("brand")
+            rec.score.ext["cat_l1"] = p.get("cat_l1")
+            rec.score.ext["cat_l2"] = p.get("cat_l2")
             rec.score.ext["effective_price_inr"] = p.get("effective_price_inr")
-            rec.score.ext["image_urls"] = p.get("image_urls")
+            
+            raw_imgs = p.get("image_urls")
+            if isinstance(raw_imgs, str):
+                try:
+                    import json
+                    raw_imgs = json.loads(raw_imgs)
+                except Exception:
+                    raw_imgs = [u.strip() for u in raw_imgs.split("|") if u.strip()]
+            rec.score.ext["image_urls"] = raw_imgs if isinstance(raw_imgs, list) else []
             rec.score.ext["description"] = p.get("description")
 
             # ALWAYS use an Amazon search URL so the link never 404s (ASINs from 2023 expire).
